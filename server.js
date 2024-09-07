@@ -12,6 +12,12 @@ let chatHistory = [];
 // Serve static files from the public directory
 app.use(express.static("public"));
 
+// Helper function to get the current time in HH:MM format
+const getCurrentTime = () => {
+    const now = new Date();
+    return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+};
+
 io.on("connection", (socket) => {
     console.log("A user connected");
 
@@ -21,15 +27,17 @@ io.on("connection", (socket) => {
     // Listen for incoming messages
     socket.on("chatMessage", (data) => {
         const { username, message } = data;
+        const timestamp = getCurrentTime();
 
-        // Save message to chat history (limit to the last 100 messages to avoid memory overflow)
-        chatHistory.push({ username, message });
+        // Save message to chat history (limit to the last 100 messages)
+        const chatMessage = { username, message, timestamp };
+        chatHistory.push(chatMessage);
         if (chatHistory.length > 100) {
-            chatHistory.shift(); // Remove the oldest message when the limit is reached
+            chatHistory.shift();
         }
 
-        // Broadcast the message along with the username to all connected clients
-        io.emit("chatMessage", { username, message });
+        // Broadcast the message with the username and timestamp to all connected clients
+        io.emit("chatMessage", chatMessage);
     });
 
     // Handle disconnect

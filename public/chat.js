@@ -37,7 +37,7 @@ window.onload = () => {
 socket.on("chatHistory", (history) => {
     history.forEach((message) => {
         const messageElement = document.createElement("p");
-        messageElement.textContent = `${message.username}: ${message.message}`;
+        messageElement.innerHTML = `<strong>${message.username}</strong> [${message.timestamp}]: ${message.message}`;
         chatBox.appendChild(messageElement);
     });
     chatBox.scrollTop = chatBox.scrollHeight; // Auto scroll to the latest message
@@ -45,9 +45,9 @@ socket.on("chatHistory", (history) => {
 
 // Listen for incoming messages from the server
 socket.on("chatMessage", (data) => {
-    const { username, message } = data;
+    const { username, message, timestamp } = data;
     const messageElement = document.createElement("p");
-    messageElement.textContent = `${username}: ${message}`;
+    messageElement.innerHTML = `<strong>${username}</strong> [${timestamp}]: ${message}`;
     chatBox.appendChild(messageElement);
     chatBox.scrollTop = chatBox.scrollHeight; // Auto scroll to the latest message
 });
