@@ -67,3 +67,89 @@ messageInput.addEventListener("keypress", (e) => {
         sendButton.click();
     }
 });
+
+
+// Voice chat variables
+let localStream = null;
+let peerConnection = null;
+const configuration = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] }; // STUN server for ICE candidates
+
+// DOM elements
+const voiceChatButton = document.getElementById("voice-chat-button");
+const remoteAudio = document.getElementById("remote-audio");
+
+// Handle voice chat button click
+voiceChatButton.addEventListener("click", startVoiceChat);
+
+// Function to start voice chat
+function startVoiceChat() {
+    navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(stream => {
+            localStream = stream;
+            setupPeerConnection();
+            stream.getTracks().forEach(track => peerConnection.addTrack(track, stream));
+            voiceChatButton.disabled = true; // Disable the button after starting the voice chat
+        })
+        .catch(error => console.error("Error accessing media devices.", error));
+}
+
+// Function to create and set up a peer connection
+function setupPeerConnection() {
+    peerConnection = new RTCPeerConnection(configuration);
+
+    // Send any ice candidates to the other peer
+    peerConnection.onicecandidate = event => {
+        if (event.candidate) {
+            socket.emit("iceCandidate", event.candidate);
+        }
+    };
+
+    // When the remote stream is received, play it
+    peerConnection.ontrack = event => {
+        remoteAudio.style.display = "block";  // Show the audio element when a remote stream is received
+        remoteAudio.srcObject = event.streams[0];
+    };
+
+    // Create an offer and send it to the other peer
+    peerConnection.createOffer()
+        .then(offer => {
+            return peerConnection.setLocalDescription(offer);
+        })
+        .then(() => {
+            socket.emit("offer", peerConnection.localDescription);
+        });
+}
+
+// Handle receiving an offer from another peer
+socket.on("offer", description => {
+    peerConnection = new RTCPeerConnection(configuration);
+    peerConnection.setRemoteDescription(description);
+
+    // Add your local stream to the connection
+    localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+
+    // Create an answer and send it back to the caller
+    peerConnection.createAnswer()
+        .then(answer => {
+            return peerConnection.setLocalDescription(answer);
+        })
+        .then(() => {
+            socket.emit("answer", peerConnection.localDescription);
+        });
+
+    // When the remote stream is received, play it
+    peerConnection.ontrack = event => {
+        remoteAudio.style.display = "block";
+        remoteAudio.srcObject = event.streams[0];
+    };
+});
+
+// Handle receiving an answer from the callee
+socket.on("answer", description => {
+    peerConnection.setRemoteDescription(description);
+});
+
+// Handle ICE candidates
+socket.on("iceCandidate", candidate => {
+    peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+});

@@ -45,7 +45,28 @@ io.on("connection", (socket) => {
         console.log("A user disconnected");
     });
 });
+io.on("connection", (socket) => {
+    console.log("A user connected");
 
+    // Handle WebRTC offer
+    socket.on("offer", (description) => {
+        socket.broadcast.emit("offer", description);
+    });
+
+    // Handle WebRTC answer
+    socket.on("answer", (description) => {
+        socket.broadcast.emit("answer", description);
+    });
+
+    // Handle ICE candidates
+    socket.on("iceCandidate", (candidate) => {
+        socket.broadcast.emit("iceCandidate", candidate);
+    });
+
+    socket.on("disconnect", () => {
+        console.log("A user disconnected");
+    });
+});
 // Start the server
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
