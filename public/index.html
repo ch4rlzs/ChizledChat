@@ -1,48 +1,38 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chizled Chat Room</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chizled Chat Room</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>Chizled Chat Room</h1>
-    </header>
+    <div class="container">
+        <header>
+            <h1>Chizled Chat Room</h1>
+        </header>
+        <div class="username-section">
+            <input type="text" id="username-input" placeholder="Enter your username">
+            <button id="set-username" class="btn">Set Username</button>
+        </div>
+        <div class="chat-section">
+            <div id="chat-box" class="chat-box"></div>
+            <div class="input-section">
+                <input type="text" id="message-input" placeholder="Type a message">
+                <button id="send-button" class="btn">Send</button>
+            </div>
 
-    <!-- Username Input Section -->
-    <div id="username-container" class="username-section">
-      <h2>Enter your username</h2>
-      <input type="text" id="username-input" placeholder="Enter your username" />
-      <button id="username-button" class="btn">Join Chat</button>
+            <!-- Voice Chat Section -->
+            <button id="voice-chat-button" class="btn">Start Voice Chat</button>
+            <button id="disconnect-button" class="btn" style="display: none;">Disconnect Voice Chat</button>
+
+            <h3>Currently in Voice Chat:</h3>
+            <ul id="voice-chat-users"></ul>
+
+            <audio id="remote-audio" controls autoplay style="display: none;"></audio>
+        </div>
     </div>
-
-    <!-- Chat Section -->
-    <div id="chat-box-container" class="chat-section" style="display: none;">
-      <div id="chat-box" class="chat-box"></div>
-      <div class="input-section">
-        <input type="text" id="message-input" placeholder="Type your message..." />
-        <button id="send-button" class="btn">Send</button>
-      </div>
-    </div>
-  </div>
-
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="chat.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="chat.js"></script>
 </body>
-<div class="chat-section">
-  <!-- Existing chat elements -->
-
-  <!-- Voice Chat Section -->
-  <button id="voice-chat-button" class="btn">Start Voice Chat</button>
-  <button id="disconnect-button" class="btn" style="display: none;">Disconnect Voice Chat</button>
-
-  <h3>Currently in Voice Chat:</h3>
-  <ul id="voice-chat-users"></ul>
-
-  <audio id="remote-audio" controls autoplay style="display: none;"></audio>
-</div>
-
 </html>

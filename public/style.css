@@ -1,128 +1,139 @@
 /* General styles */
 body {
-    font-family: 'Arial', sans-serif;
-    background-color: rgba(128, 128, 128, 0.25); /* Light grey with transparency */
-    color: #333;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-  }
-  
+  font-family: 'Arial', sans-serif;
+  background-color: #f0f0f0;
+  color: #333;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.container {
+  width: 100%;
+  max-width: 600px;
+  background-color: #ffffff;
+  box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+header {
+  background-color: #007BFF;
+  padding: 20px;
+  text-align: center;
+  color: white;
+}
+
+h1 {
+  margin: 0;
+  font-size: 24px;
+  text-transform: uppercase;
+}
+
+.username-section {
+  padding: 20px;
+  text-align: center;
+}
+
+.username-section input {
+  padding: 10px;
+  width: 80%;
+  max-width: 400px;
+  margin: 10px 0;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.btn {
+  background-color: #007BFF;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.btn:hover {
+  background-color: #0056b3;
+}
+
+/* Chat section */
+.chat-section {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-box {
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  padding: 10px;
+  height: 400px;
+  overflow-y: scroll;
+  margin-bottom: 10px;
+  border-radius: 5px;
+}
+
+.chat-box p {
+  margin: 5px 0;
+  padding: 5px;
+  background-color: #e9ecef;
+  border-radius: 5px;
+}
+
+.input-section {
+  display: flex;
+  align-items: center;
+}
+
+#message-input {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  margin-right: 10px;
+}
+
+#send-button {
+  padding: 10px 15px;
+  background-color: #007BFF;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+#send-button:hover {
+  background-color: #0056b3;
+}
+
+/* Voice Chat Section */
+#voice-chat-users {
+  list-style-type: none;
+  padding: 0;
+}
+
+#voice-chat-users li {
+  margin: 5px 0;
+}
+
+audio {
+  width: 100%;
+  margin-top: 10px;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
   .container {
-    width: 100%;
-    max-width: 600px;
-    background-color: rgba(54, 52, 52, 0.301); /* Slightly transparent white */
-    box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.1);
-    border-radius: 10px;
-    overflow: hidden;
-  }
-  
-  header {
-    background-color: #007BFF;
-    padding: 20px;
-    text-align: center;
-    color: white;
-  }
-  
-  h1 {
-    margin: 0;
-    font-size: 24px;
-    text-transform: uppercase;
-  }
-  
-  .username-section {
-    padding: 20px;
-    text-align: center;
-  }
-  
-  .username-section input {
-    padding: 10px;
-    width: 80%;
-    max-width: 400px;
-    margin: 10px 0;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-  }
-  
-  .btn {
-    background-color: #007BFF;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-  }
-  
-  .btn:hover {
-    background-color: #0056b3;
-  }
-  
-  /* Chat section */
-  .chat-section {
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .chat-box {
-    background-color: rgba(249, 249, 249, 0.6); /* Slightly transparent chat box */
-    border: 1px solid #ddd;
-    padding: 10px;
-    height: 400px;
-    overflow-y: scroll;
-    margin-bottom: 10px;
-    border-radius: 5px;
-  }
-  
-  .chat-box p {
-    margin: 5px 0;
-    padding: 5px;
-    background-color: #e9ecef2a;
-    border-radius: 5px;
-  }
-  
-  .input-section {
-    display: flex;
-    align-items: center;
-  }
-  
-  #message-input {
-    flex: 1;
-    padding: 10px;
-    border: 1px solid #cccccc1f;
-    border-radius: 5px;
-    margin-right: 10px;
-  }
-  
-  #send-button {
-    padding: 10px 15px;
-    background-color: #007BFF;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-  }
-  
-  #send-button:hover {
-    background-color: #0056b3;
-  }
-  
-  /* Responsive */
-  @media (max-width: 600px) {
-    .container {
       width: 95%;
-    }
-  
-    h1 {
+  }
+
+  h1 {
       font-size: 20px;
-    }
   }
-  audio {
-    width: 100%;
-    margin-top: 10px;
-  }
+}
