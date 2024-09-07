@@ -1,7 +1,7 @@
 /* General styles */
 body {
     font-family: 'Arial', sans-serif;
-    background-color: #f0f0f03f;
+    background-color: rgba(128, 128, 128, 0.25); /* Light grey with transparency */
     color: #333;
     margin: 0;
     padding: 0;
@@ -14,7 +14,7 @@ body {
   .container {
     width: 100%;
     max-width: 600px;
-    background-color: #ffffff15;
+    background-color: rgba(255, 255, 255, 0.15); /* Slightly transparent white */
     box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.1);
     border-radius: 10px;
     overflow: hidden;
@@ -69,7 +69,7 @@ body {
   }
   
   .chat-box {
-    background-color: #f9f9f99a;
+    background-color: rgba(249, 249, 249, 0.6); /* Slightly transparent chat box */
     border: 1px solid #ddd;
     padding: 10px;
     height: 400px;
