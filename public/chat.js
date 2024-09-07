@@ -68,18 +68,25 @@ messageInput.addEventListener("keypress", (e) => {
     }
 });
 
-
 // Voice chat variables
 let localStream = null;
 let peerConnection = null;
+let audioContext = null;
+let analyser = null;
+let speaking = false;
+let speakingInterval = null;
+let currentUsers = [];
 const configuration = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] }; // STUN server for ICE candidates
 
 // DOM elements
 const voiceChatButton = document.getElementById("voice-chat-button");
+const disconnectButton = document.getElementById("disconnect-button");
+const voiceChatUsersList = document.getElementById("voice-chat-users");
 const remoteAudio = document.getElementById("remote-audio");
 
 // Handle voice chat button click
 voiceChatButton.addEventListener("click", startVoiceChat);
+disconnectButton.addEventListener("click", disconnectVoiceChat);
 
 // Function to start voice chat
 function startVoiceChat() {
@@ -88,9 +95,39 @@ function startVoiceChat() {
             localStream = stream;
             setupPeerConnection();
             stream.getTracks().forEach(track => peerConnection.addTrack(track, stream));
-            voiceChatButton.disabled = true; // Disable the button after starting the voice chat
+
+            // Handle voice activity detection
+            startVoiceDetection(stream);
+
+            // Notify server that the user has joined the voice chat
+            socket.emit("joinVoiceChat", { username: "Your Username" });
+
+            voiceChatButton.style.display = "none";
+            disconnectButton.style.display = "inline-block";
         })
         .catch(error => console.error("Error accessing media devices.", error));
+}
+
+// Function to disconnect from the voice chat
+function disconnectVoiceChat() {
+    // Close the peer connection
+    if (peerConnection) {
+        peerConnection.close();
+        peerConnection = null;
+    }
+
+    // Stop all audio tracks
+    localStream.getTracks().forEach(track => track.stop());
+
+    // Notify server the user has left
+    socket.emit("leaveVoiceChat");
+
+    voiceChatButton.style.display = "inline-block";
+    disconnectButton.style.display = "none";
+    remoteAudio.style.display = "none";
+
+    // Clear voice activity detection
+    stopVoiceDetection();
 }
 
 // Function to create and set up a peer connection
@@ -118,6 +155,40 @@ function setupPeerConnection() {
         .then(() => {
             socket.emit("offer", peerConnection.localDescription);
         });
+}
+
+// Function to detect if the user is speaking (Voice Activity Detection)
+function startVoiceDetection(stream) {
+    audioContext = new AudioContext();
+    analyser = audioContext.createAnalyser();
+    const microphone = audioContext.createMediaStreamSource(stream);
+    microphone.connect(analyser);
+    analyser.fftSize = 512;
+
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+    speakingInterval = setInterval(() => {
+        analyser.getByteFrequencyData(dataArray);
+        let sum = dataArray.reduce((acc, val) => acc + val, 0);
+        let isSpeaking = sum > 1000;  // Simple threshold to detect speech
+
+        if (isSpeaking && !speaking) {
+            speaking = true;
+            socket.emit("userSpeaking", { username: "Your Username", speaking: true });
+        } else if (!isSpeaking && speaking) {
+            speaking = false;
+            socket.emit("userSpeaking", { username: "Your Username", speaking: false });
+        }
+    }, 100);
+}
+
+function stopVoiceDetection() {
+    if (speakingInterval) {
+        clearInterval(speakingInterval);
+    }
+    if (audioContext) {
+        audioContext.close();
+    }
 }
 
 // Handle receiving an offer from another peer
@@ -153,3 +224,27 @@ socket.on("answer", description => {
 socket.on("iceCandidate", candidate => {
     peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
 });
+
+// Track users in voice chat
+socket.on("updateVoiceChatUsers", (users) => {
+    currentUsers = users;
+    updateVoiceChatUserList();
+});
+
+socket.on("userSpeaking", ({ username, speaking }) => {
+    const userElement = document.getElementById(`user-${username}`);
+    if (userElement) {
+        userElement.style.fontWeight = speaking ? "bold" : "normal";
+    }
+});
+
+// Function to update the user list in the voice chat
+function updateVoiceChatUserList() {
+    voiceChatUsersList.innerHTML = "";
+    currentUsers.forEach(user => {
+        const li = document.createElement("li");
+        li.textContent = user.username;
+        li.id = `user-${user.username}`;
+        voiceChatUsersList.appendChild(li);
+    });
+}

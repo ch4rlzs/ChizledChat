@@ -45,6 +45,8 @@ io.on("connection", (socket) => {
         console.log("A user disconnected");
     });
 });
+let voiceChatUsers = [];
+
 io.on("connection", (socket) => {
     console.log("A user connected");
 
@@ -63,10 +65,30 @@ io.on("connection", (socket) => {
         socket.broadcast.emit("iceCandidate", candidate);
     });
 
+    // When a user joins the voice chat
+    socket.on("joinVoiceChat", (user) => {
+        voiceChatUsers.push({ id: socket.id, username: user.username });
+        io.emit("updateVoiceChatUsers", voiceChatUsers); // Update all clients
+    });
+
+    // When a user leaves the voice chat
+    socket.on("leaveVoiceChat", () => {
+        voiceChatUsers = voiceChatUsers.filter(user => user.id !== socket.id);
+        io.emit("updateVoiceChatUsers", voiceChatUsers);
+    });
+
+    // When a user speaks or stops speaking
+    socket.on("userSpeaking", ({ username, speaking }) => {
+        io.emit("userSpeaking", { username, speaking });
+    });
+
     socket.on("disconnect", () => {
         console.log("A user disconnected");
+        voiceChatUsers = voiceChatUsers.filter(user => user.id !== socket.id);
+        io.emit("updateVoiceChatUsers", voiceChatUsers);
     });
 });
+
 // Start the server
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
