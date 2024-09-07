@@ -6,15 +6,28 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIO(server);
 
+// Array to store chat history
+let chatHistory = [];
+
 // Serve static files from the public directory
 app.use(express.static("public"));
 
 io.on("connection", (socket) => {
     console.log("A user connected");
 
+    // Send chat history to the newly connected client
+    socket.emit("chatHistory", chatHistory);
+
     // Listen for incoming messages
     socket.on("chatMessage", (data) => {
         const { username, message } = data;
+
+        // Save message to chat history (limit to the last 100 messages to avoid memory overflow)
+        chatHistory.push({ username, message });
+        if (chatHistory.length > 100) {
+            chatHistory.shift(); // Remove the oldest message when the limit is reached
+        }
+
         // Broadcast the message along with the username to all connected clients
         io.emit("chatMessage", { username, message });
     });
