@@ -1,30 +1,35 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ChizledChat</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chizled Chat Room</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1 style="background-color:powderblue;">Chizled Chat Room</h1>
-   
-    <div class="chat-container">
-        <!-- Username Input -->
-        <div id="username-container">
-            <input id="username-input" type="text" placeholder="Enter your username">
-            <button id="username-button">Join Chat</button>
-        </div>
+  <div class="container">
+    <header>
+      <h1>Chizled Chat Room</h1>
+    </header>
 
-        <!-- Chat Box -->
-        <div id="chat-box-container" style="display: none;">
-            <div id="chat-box"></div>
-            <input id="message-input" type="text" placeholder="Type a message...">
-            <button id="send-button">Send</button>
-        </div>
+    <!-- Username Input Section -->
+    <div id="username-container" class="username-section">
+      <h2>Enter your username</h2>
+      <input type="text" id="username-input" placeholder="Enter your username" />
+      <button id="username-button" class="btn">Join Chat</button>
     </div>
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="chat.js"></script>
+    <!-- Chat Section -->
+    <div id="chat-box-container" class="chat-section" style="display: none;">
+      <div id="chat-box" class="chat-box"></div>
+      <div class="input-section">
+        <input type="text" id="message-input" placeholder="Type your message..." />
+        <button id="send-button" class="btn">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="chat.js"></script>
 </body>
 </html>
