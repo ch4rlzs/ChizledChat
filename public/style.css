@@ -14,7 +14,7 @@ body {
   .container {
     width: 100%;
     max-width: 600px;
-    background-color: rgba(255, 255, 255, 0.15); /* Slightly transparent white */
+    background-color: rgba(54, 52, 52, 0.301); /* Slightly transparent white */
     box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.1);
     border-radius: 10px;
     overflow: hidden;
