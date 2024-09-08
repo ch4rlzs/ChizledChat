@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // DOM elements
     const usernameInput = document.getElementById("username-input");
-    const setUsernameButton = document.getElementById("set-username");
+    const setUsernameButton = document.getElementById("username-button");
     const messageInput = document.getElementById("message-input");
     const sendButton = document.getElementById("send-button");
     const chatBox = document.getElementById('chat-box');
