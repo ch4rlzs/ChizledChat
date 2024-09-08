@@ -9,62 +9,52 @@ let chatHistory = [];
 let users = [];
 let voiceChatUsers = [];
 
-// Serve static files from the public directory
-app.use(express.static("public"));
+app.use(express.static('public'));
 
-// Helper function to get the current time in HH:MM format
-const getCurrentTime = () => {
-    const now = new Date();
-    return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-};
+io.on('connection', socket => {
+    console.log('A user connected:', socket.id);
 
-io.on("connection", (socket) => {
-    console.log("A user connected");
+    // Send chat history when a new user connects
+    socket.emit('chatHistory', chatHistory);
 
-    // Send chat history to the newly connected client
-    socket.emit("chatHistory", chatHistory);
+    // Set username and notify others
+    socket.on('setUsername', username => {
+        users.push({ id: socket.id, username });
+        console.log(`${username} joined the chat`);
 
-    // Listen for incoming messages
-    socket.on("chatMessage", (data) => {
-        const { username, message } = data;
-        const timestamp = getCurrentTime();
+        // Notify others that the user has joined
+        socket.broadcast.emit('message', { username: 'System', message: `${username} has joined the chat`, time: getTime() });
+    });
 
-        // Save message to chat history (limit to the last 100 messages)
-        const chatMessage = { username, message, timestamp };
-        chatHistory.push(chatMessage);
+    // Handle message sending
+    socket.on('sendMessage', data => {
+        const messageData = { username: data.username, message: data.message, time: getTime() };
+        chatHistory.push(messageData);
+
+        // Keep chat history limited to the last 100 messages
         if (chatHistory.length > 100) {
             chatHistory.shift();
         }
 
-        // Broadcast the message with the username and timestamp to all connected clients
-        io.emit("chatMessage", chatMessage);
+        io.emit('message', messageData); // Broadcast message to all users
     });
 
-    // Handle voice chat joining
-    socket.on('joinVoiceChat', user => {
-        voiceChatUsers.push({ id: socket.id, username: user.username });
-        io.emit('updateVoiceChatUsers', voiceChatUsers);
+    // Handle voice chat start
+    socket.on('startVoiceChat', () => {
+        const user = users.find(u => u.id === socket.id);
+        if (user) {
+            voiceChatUsers.push(user);
+            io.emit('updateVoiceChatUsers', voiceChatUsers);
+        }
     });
 
-    // Handle user leaving voice chat
-    socket.on('leaveVoiceChat', user => {
+    // Handle voice chat disconnection
+    socket.on('disconnectVoiceChat', () => {
         voiceChatUsers = voiceChatUsers.filter(u => u.id !== socket.id);
         io.emit('updateVoiceChatUsers', voiceChatUsers);
     });
 
-    socket.on('offer', (id, description) => {
-        socket.broadcast.emit('offer', id, description);
-    });
-
-    socket.on('answer', (id, description) => {
-        socket.broadcast.emit('answer', id, description);
-    });
-
-    socket.on('iceCandidate', (id, candidate) => {
-        socket.broadcast.emit('iceCandidate', id, candidate);
-    });
-
-    // Handle user disconnecting from the chat
+    // Handle user disconnecting
     socket.on('disconnect', () => {
         const user = users.find(u => u.id === socket.id);
         if (user) {
@@ -73,15 +63,16 @@ io.on("connection", (socket) => {
 
             // Notify others that the user has left
             io.emit('message', { username: 'System', message: `${user.username} has left the chat`, time: getTime() });
-        }
 
-        voiceChatUsers = voiceChatUsers.filter(u => u.id !== socket.id);
-        io.emit('updateVoiceChatUsers', voiceChatUsers);
+            // Update voice chat users list
+            voiceChatUsers = voiceChatUsers.filter(u => u.id !== socket.id);
+            io.emit('updateVoiceChatUsers', voiceChatUsers);
+        }
     });
 
-    // Handle user speaking event
-    socket.on('userSpeaking', data => {
-        io.emit('userSpeaking', data);
+    // Handle speaking status (for now, we'll simulate it)
+    socket.on('updateSpeakingStatus', (data) => {
+        socket.broadcast.emit('speakingStatus', data);
     });
 });
 
