@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let isVoiceChatting = false;
 
     // DOM elements
+    const usernameContainer = document.getElementById("username-container");
     const usernameInput = document.getElementById("username-input");
     const setUsernameButton = document.getElementById("username-button");
     const messageInput = document.getElementById("message-input");
@@ -17,29 +18,31 @@ document.addEventListener('DOMContentLoaded', () => {
     const voiceChatUsersList = document.getElementById('voice-chat-users');
     const speakingStatus = document.getElementById('speaking-status');
     
-    // Error handling function
     function handleError(message) {
         console.error(message);
         alert(message);
     }
 
+    function setUsername(name) {
+        username = name;
+        localStorage.setItem('username', username);
+        console.log('Setting username:', username);
+        socket.emit("setUsername", username);
+        usernameContainer.style.display = "none";
+        chatInterface.style.display = "block";
+    }
+
+    // Check if username is already set
+    if (username) {
+        setUsername(username);
+    }
+
     // Set username
     if (setUsernameButton && usernameInput) {
         setUsernameButton.addEventListener("click", () => {
-            username = usernameInput.value.trim();
-            if (username) {
-                localStorage.setItem('username', username);
-                console.log('Setting username:', username);
-                socket.emit("setUsername", username);
-                setUsernameButton.style.display = "none";
-                usernameInput.style.display = "none";
-                
-                // Show chat interface
-                if (chatInterface) {
-                    chatInterface.style.display = "block";
-                } else {
-                    handleError("Chat interface element not found");
-                }
+            const name = usernameInput.value.trim();
+            if (name) {
+                setUsername(name);
             } else {
                 handleError('Username is empty');
             }
@@ -50,46 +53,56 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Send chat message
     if (sendButton && messageInput) {
-        sendButton.addEventListener("click", () => {
-            const message = messageInput.value.trim();
-            if (message) {
-                console.log('Sending message:', message);
-                socket.emit("sendMessage", { username, message });
-                messageInput.value = "";
-            } else {
-                console.log('Message is empty');
+        sendButton.addEventListener("click", sendMessage);
+        messageInput.addEventListener("keypress", (e) => {
+            if (e.key === "Enter") {
+                sendMessage();
             }
         });
     } else {
         handleError("Send button or message input not found");
     }
 
-    // ... [rest of the code remains the same]
+    function sendMessage() {
+        const message = messageInput.value.trim();
+        if (message) {
+            console.log('Sending message:', message);
+            socket.emit("sendMessage", { username, message });
+            messageInput.value = "";
+        } else {
+            console.log('Message is empty');
+        }
+    }
+
+    // Handle incoming chat messages
+    socket.on('message', (data) => {
+        appendMessage(data);
+    });
 
     // Receive and display chat history
     socket.on('chatHistory', (history) => {
-        if (chatBox) {
-            chatBox.innerHTML = ''; // Clear chat box before adding history
-            history.forEach(message => {
-                const messageElement = document.createElement('p');
-                const time = `[${message.time}] `;
-                const sender = `${message.username}: `;
-                const messageText = `${message.message}`;
-
-                messageElement.innerHTML = `${time}<strong>${sender}</strong>${messageText}`;
-                messageElement.classList.add('message');
-                if (message.username === 'System') {
-                    messageElement.classList.add('system-message');
-                }
-                chatBox.appendChild(messageElement);
-            });
-            chatBox.scrollTop = chatBox.scrollHeight;
-        } else {
-            handleError("Chat box element not found");
-        }
+        chatBox.innerHTML = ''; // Clear chat box before adding history
+        history.forEach(message => {
+            appendMessage(message);
+        });
     });
 
-    // ... [rest of the code remains the same]
+    function appendMessage(data) {
+        const messageElement = document.createElement('p');
+        const time = `[${data.time}] `;
+        const sender = `${data.username}: `;
+        const messageText = `${data.message}`;
+
+        messageElement.innerHTML = `${time}<strong>${sender}</strong>${messageText}`;
+        messageElement.classList.add('message');
+        if (data.username === 'System') {
+            messageElement.classList.add('system-message');
+        }
+        chatBox.appendChild(messageElement);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    // ... [rest of the code for voice chat remains the same]
 });
     
 

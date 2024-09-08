@@ -10,24 +10,29 @@ let users = [];
 let voiceChatUsers = [];
 
 app.use(express.static('public'));
+
 function getTime() {
     const date = new Date();
-    return `${date.getHours()}:${date.getMinutes()}`;
+    return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
 }
 
 io.on('connection', socket => {
     console.log('A user connected:', socket.id);
 
+
     // Send chat history when a new user connects
-    socket.emit('chatHistory', chatHistory);
+    socket.emit('chatHistory', chatHistory)
 
     // Set username and notify others
     socket.on('setUsername', username => {
-        users.push({ id: socket.id, username });
+        const user = { id: socket.id, username };
+        users.push(user);
         console.log(`${username} joined the chat`);
 
         // Notify others that the user has joined
-        socket.broadcast.emit('message', { username: 'System', message: `${username} has joined the chat`, time: getTime() });
+        const systemMessage = { username: 'System', message: `${username} has joined the chat`, time: getTime() };
+        chatHistory.push(systemMessage);
+        io.emit('message', systemMessage);
     });
 
     // Handle message sending
@@ -42,20 +47,33 @@ io.on('connection', socket => {
 
         io.emit('message', messageData); // Broadcast message to all users
     });
-
     // Handle voice chat start
-    socket.on('startVoiceChat', () => {
-        const user = users.find(u => u.id === socket.id);
-        if (user) {
-            voiceChatUsers.push(user);
-            io.emit('updateVoiceChatUsers', voiceChatUsers);
-        }
+    socket.on('joinVoiceChat', (username) => {
+        voiceChatUsers.push({ id: socket.id, username });
+        io.emit('userJoinedVoiceChat', username);
+        io.emit('updateVoiceChatUsers', voiceChatUsers.map(u => u.username));
     });
 
-    // Handle voice chat disconnection
-    socket.on('disconnectVoiceChat', () => {
+    socket.on('leaveVoiceChat', (username) => {
         voiceChatUsers = voiceChatUsers.filter(u => u.id !== socket.id);
-        io.emit('updateVoiceChatUsers', voiceChatUsers);
+        io.emit('userLeftVoiceChat', username);
+        io.emit('updateVoiceChatUsers', voiceChatUsers.map(u => u.username));
+    });
+
+    socket.on('offer', ({ offer, to }) => {
+        socket.to(to).emit('offer', { offer, from: socket.id });
+    });
+
+    socket.on('answer', ({ answer, to }) => {
+        socket.to(to).emit('answer', { answer, from: socket.id });
+    });
+
+    socket.on('iceCandidate', ({ candidate, to }) => {
+        socket.to(to).emit('iceCandidate', { candidate, from: socket.id });
+    });
+
+    socket.on('speaking', (data) => {
+        socket.broadcast.emit('speakingStatus', data);
     });
 
     // Handle user disconnecting
@@ -66,20 +84,20 @@ io.on('connection', socket => {
             users = users.filter(u => u.id !== socket.id);
 
             // Notify others that the user has left
-            io.emit('message', { username: 'System', message: `${user.username} has left the chat`, time: getTime() });
+            const systemMessage = { username: 'System', message: `${user.username} has left the chat`, time: getTime() };
+            chatHistory.push(systemMessage);
+            io.emit('message', systemMessage);
 
             // Update voice chat users list
-            voiceChatUsers = voiceChatUsers.filter(u => u.id !== socket.id);
-            io.emit('updateVoiceChatUsers', voiceChatUsers);
+            const voiceChatUser = voiceChatUsers.find(u => u.id === socket.id);
+            if (voiceChatUser) {
+                voiceChatUsers = voiceChatUsers.filter(u => u.id !== socket.id);
+                io.emit('userLeftVoiceChat', voiceChatUser.username);
+                io.emit('updateVoiceChatUsers', voiceChatUsers.map(u => u.username));
+            }
         }
     });
-
-    // Handle speaking status (for now, we'll simulate it)
-    socket.on('updateSpeakingStatus', (data) => {
-        socket.broadcast.emit('speakingStatus', data);
-    });
 });
-
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
