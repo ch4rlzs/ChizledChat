@@ -9,39 +9,46 @@ let chatHistory = [];
 let users = [];
 let voiceChatUsers = [];
 
-app.use(express.static('public'));
+// Serve static files from the public directory
+app.use(express.static("public"));
 
-io.on('connection', socket => {
-    console.log('A user connected:', socket.id);
+// Helper function to get the current time in HH:MM format
+const getCurrentTime = () => {
+    const now = new Date();
+    return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+};
 
-    // Send chat history when a new user connects
-    socket.emit('chatHistory', chatHistory);
+io.on("connection", (socket) => {
+    console.log("A user connected");
 
-    // Set username and notify others
-    socket.on('setUsername', username => {
-        users.push({ id: socket.id, username });
-        console.log(`${username} joined the chat`);
+    // Send chat history to the newly connected client
+    socket.emit("chatHistory", chatHistory);
 
-        // Notify others that the user has joined
-        socket.broadcast.emit('message', { username: 'System', message: `${username} has joined the chat`, time: getTime() });
-    });
+    // Listen for incoming messages
+    socket.on("chatMessage", (data) => {
+        const { username, message } = data;
+        const timestamp = getCurrentTime();
 
-    // Handle message sending
-    socket.on('sendMessage', data => {
-        const messageData = { username: data.username, message: data.message, time: getTime() };
-        chatHistory.push(messageData);
-        
-        // Keep chat history limited to the last 100 messages
+        // Save message to chat history (limit to the last 100 messages)
+        const chatMessage = { username, message, timestamp };
+        chatHistory.push(chatMessage);
         if (chatHistory.length > 100) {
             chatHistory.shift();
         }
 
-        io.emit('message', messageData); // Broadcast message to all users
+        // Broadcast the message with the username and timestamp to all connected clients
+        io.emit("chatMessage", chatMessage);
     });
 
     // Handle voice chat joining
     socket.on('joinVoiceChat', user => {
         voiceChatUsers.push({ id: socket.id, username: user.username });
+        io.emit('updateVoiceChatUsers', voiceChatUsers);
+    });
+
+    // Handle user leaving voice chat
+    socket.on('leaveVoiceChat', user => {
+        voiceChatUsers = voiceChatUsers.filter(u => u.id !== socket.id);
         io.emit('updateVoiceChatUsers', voiceChatUsers);
     });
 
@@ -57,7 +64,7 @@ io.on('connection', socket => {
         socket.broadcast.emit('iceCandidate', id, candidate);
     });
 
-    // Handle user disconnecting from voice chat
+    // Handle user disconnecting from the chat
     socket.on('disconnect', () => {
         const user = users.find(u => u.id === socket.id);
         if (user) {
@@ -68,8 +75,13 @@ io.on('connection', socket => {
             io.emit('message', { username: 'System', message: `${user.username} has left the chat`, time: getTime() });
         }
 
-        voiceChatUsers = voiceChatUsers.filter(user => user.id !== socket.id);
+        voiceChatUsers = voiceChatUsers.filter(u => u.id !== socket.id);
         io.emit('updateVoiceChatUsers', voiceChatUsers);
+    });
+
+    // Handle user speaking event
+    socket.on('userSpeaking', data => {
+        io.emit('userSpeaking', data);
     });
 });
 

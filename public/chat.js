@@ -3,6 +3,7 @@ let username = localStorage.getItem('username');
 let peerConnections = {};
 let localStream = null;
 let voiceChatUsersList = document.getElementById('voice-chat-users');
+let speakingStatus = document.getElementById('speaking-status');
 
 // DOM elements for chat
 const usernameInput = document.getElementById("username-input");
@@ -10,6 +11,7 @@ const setUsernameButton = document.getElementById("set-username");
 const messageInput = document.getElementById("message-input");
 const sendButton = document.getElementById("send-button");
 const startVoiceChatButton = document.getElementById("start-voice-chat");
+const disconnectVoiceChatButton = document.getElementById("disconnect-voice-chat");
 
 // Function to join chat with a username
 function joinChat(username) {
@@ -40,6 +42,13 @@ sendButton.addEventListener("click", () => {
 socket.on('message', (data) => {
     const chatBox = document.getElementById('chat-box');
     const messageElement = document.createElement('p');
+    const time = `[${data.time}] `;
+    const sender = `${data.username}: `;
+    const messageText = `${data.message}`;
+    
+    
+    
+    
     messageElement.textContent = `[${data.time}] ${data.username}: ${data.message}`;
     chatBox.appendChild(messageElement);
     chatBox.scrollTop = chatBox.scrollHeight;
@@ -57,16 +66,33 @@ socket.on('chatHistory', (history) => {
     chatBox.scrollTop = chatBox.scrollHeight;
 });
 
-// Voice chat setup
+// Start Voice Chat
 startVoiceChatButton.addEventListener("click", () => {
     navigator.mediaDevices.getUserMedia({ audio: true })
         .then(stream => {
             localStream = stream;
             socket.emit('joinVoiceChat', { username });
+
+            // Show disconnect button
+            startVoiceChatButton.style.display = 'none';
+            disconnectVoiceChatButton.style.display = 'block';
         })
         .catch(error => {
             console.error('Error accessing media devices.', error);
         });
+});
+
+// Disconnect from Voice Chat
+disconnectVoiceChatButton.addEventListener("click", () => {
+    if (localStream) {
+        localStream.getTracks().forEach(track => track.stop());  // Stop the local audio stream
+    }
+    socket.emit('leaveVoiceChat', { username });
+
+    // Reset UI
+    startVoiceChatButton.style.display = 'block';
+    disconnectVoiceChatButton.style.display = 'none';
+    speakingStatus.innerHTML = '';
 });
 
 // Handle WebRTC signaling
@@ -103,8 +129,16 @@ socket.on('updateVoiceChatUsers', users => {
     users.forEach(user => {
         const li = document.createElement("li");
         li.textContent = user.username;
+        li.id = `user-${user.username}`;
         voiceChatUsersList.appendChild(li);
     });
 });
 
-socket.on
+// Handle user speaking status
+socket.on('userSpeaking', data => {
+    const userItem = document.getElementById(`user-${data.username}`);
+    if (userItem) {
+        userItem.style.fontWeight = data.speaking ? "bold" : "normal";
+    }
+});
+
