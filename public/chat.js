@@ -105,7 +105,14 @@ const disconnectVoiceChatButton = document.getElementById('disconnect-voice-chat
 const voiceChatUsersList = document.getElementById('voice-chat-users');
 const speakingStatus = document.getElementById('speaking-status');
 const socket = io();
-
+const usernameContainer = document.getElementById("username-container");
+const usernameInput = document.getElementById("username-input");
+const setUsernameButton = document.getElementById("username-button");
+const messageInput = document.getElementById("message-input");
+const sendButton = document.getElementById("send-button");
+const chatBox = document.getElementById('chat-box-container');
+const chatInterface = document.getElementById('chat-interface');
+   
     // Start voice chat
     if (startVoiceChatButton) {
         startVoiceChatButton.addEventListener("click", async () => {
