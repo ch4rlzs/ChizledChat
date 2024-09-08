@@ -14,6 +14,7 @@ function getTime() {
     const date = new Date();
     return `${date.getHours()}:${date.getMinutes()}`;
 }
+
 io.on('connection', socket => {
     console.log('A user connected:', socket.id);
 
@@ -78,7 +79,6 @@ io.on('connection', socket => {
         socket.broadcast.emit('speakingStatus', data);
     });
 });
-
 
 
 const PORT = process.env.PORT || 3000;
