@@ -159,13 +159,13 @@ const chatInterface = document.getElementById('chat-interface');
         if (data.username === 'System') {
             messageElement.classList.add('system-message');
         }
-        chatBox.appendChild(messageElement);
+        
         chatBox.scrollTop = chatBox.scrollHeight;
     });
 
     // Receive and display chat history
     socket.on('chatHistory', (history) => {
-        chatBox.innerHTML = ''; // Clear chat box before adding history
+       
         history.forEach(message => {
             const messageElement = document.createElement('p');
             const time = `[${message.time}] `;
