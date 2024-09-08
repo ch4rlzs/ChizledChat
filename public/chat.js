@@ -7,73 +7,91 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // DOM elements
     const usernameInput = document.getElementById("username-input");
-    const usernameButton = document.getElementById("username-button");
+    const setUsernameButton = document.getElementById("username-button");
     const messageInput = document.getElementById("message-input");
     const sendButton = document.getElementById("send-button");
-    const chatBox = document.getElementById("chat-box-container");
+    const chatBox = document.getElementById('chat-box-container');
+    const chatInterface = document.getElementById('chat-interface');
     const startVoiceChatButton = document.getElementById('start-voice-chat');
     const disconnectVoiceChatButton = document.getElementById('disconnect-voice-chat');
     const voiceChatUsersList = document.getElementById('voice-chat-users');
     const speakingStatus = document.getElementById('speaking-status');
-    const usernameContainer = document.getElementById("username-container");
-
     
-    // Handle username input and store it in localStorage
-    usernameButton.addEventListener("click", () => {
-    const enteredUsername = usernameInput.value.trim();
-    if (enteredUsername) {
-        username = enteredUsername;
-        localStorage.setItem("username", username); // Save username in localStorage
-        usernameContainer.style.display = "none"; // Hide username input
-        chatBoxContainer.style.display = "block"; // Show chat
+    // Error handling function
+    function handleError(message) {
+        console.error(message);
+        alert(message);
     }
-});
 
-// Load the username from localStorage when the page is loaded
-window.onload = () => {
-    const savedUsername = localStorage.getItem("username");
-    if (savedUsername) {
-        username = savedUsername;
-        usernameInput.value = savedUsername; // Autofill username input
-        usernameContainer.style.display = "none"; // Hide username input
-        chatBoxContainer.style.display = "block"; // Show chat
+    // Set username
+    if (setUsernameButton && usernameInput) {
+        setUsernameButton.addEventListener("click", () => {
+            username = usernameInput.value.trim();
+            if (username) {
+                localStorage.setItem('username', username);
+                console.log('Setting username:', username);
+                socket.emit("setUsername", username);
+                setUsernameButton.style.display = "none";
+                usernameInput.style.display = "none";
+                
+                // Show chat interface
+                if (chatInterface) {
+                    chatInterface.style.display = "block";
+                } else {
+                    handleError("Chat interface element not found");
+                }
+            } else {
+                handleError('Username is empty');
+            }
+        });
+    } else {
+        handleError("Username input or button not found");
     }
-};
 
-// Listen for incoming chat history from the server
-socket.on("chatHistory", (history) => {
-    history.forEach((message) => {
-        const messageElement = document.createElement("p");
-        messageElement.innerHTML = `<strong>${message.username}</strong> [${message.timestamp}]: ${message.message}`;
-        chatBox.appendChild(messageElement);
+    // Send chat message
+    if (sendButton && messageInput) {
+        sendButton.addEventListener("click", () => {
+            const message = messageInput.value.trim();
+            if (message) {
+                console.log('Sending message:', message);
+                socket.emit("sendMessage", { username, message });
+                messageInput.value = "";
+            } else {
+                console.log('Message is empty');
+            }
+        });
+    } else {
+        handleError("Send button or message input not found");
+    }
+
+    // ... [rest of the code remains the same]
+
+    // Receive and display chat history
+    socket.on('chatHistory', (history) => {
+        if (chatBox) {
+            chatBox.innerHTML = ''; // Clear chat box before adding history
+            history.forEach(message => {
+                const messageElement = document.createElement('p');
+                const time = `[${message.time}] `;
+                const sender = `${message.username}: `;
+                const messageText = `${message.message}`;
+
+                messageElement.innerHTML = `${time}<strong>${sender}</strong>${messageText}`;
+                messageElement.classList.add('message');
+                if (message.username === 'System') {
+                    messageElement.classList.add('system-message');
+                }
+                chatBox.appendChild(messageElement);
+            });
+            chatBox.scrollTop = chatBox.scrollHeight;
+        } else {
+            handleError("Chat box element not found");
+        }
     });
-    chatBox.scrollTop = chatBox.scrollHeight; // Auto scroll to the latest message
-});
 
-// Listen for incoming messages from the server
-socket.on("chatMessage", (data) => {
-    const { username, message, timestamp } = data;
-    const messageElement = document.createElement("p");
-    messageElement.innerHTML = `<strong>${username}</strong> [${timestamp}]: ${message}`;
-    chatBox.appendChild(messageElement);
-    chatBox.scrollTop = chatBox.scrollHeight; // Auto scroll to the latest message
+    // ... [rest of the code remains the same]
 });
-
-// Send message on button click
-sendButton.addEventListener("click", () => {
-    const message = messageInput.value.trim();
-    if (message && username) {
-        socket.emit("chatMessage", { username, message });
-        messageInput.value = ""; // Clear the input field
-    }
-});
-
-// Send message on Enter key press
-messageInput.addEventListener("keypress", (e) => {
-    if (e.key === "Enter") {
-        sendButton.click();
-    }
-});
+    
 
     // Start voice chat
     if (startVoiceChatButton) {
@@ -157,5 +175,4 @@ messageInput.addEventListener("keypress", (e) => {
     // Show speaking status
     socket.on('speakingStatus', (data) => {
         speakingStatus.textContent = data.isSpeaking ? `${data.username} is speaking` : '';
-    });
 });
