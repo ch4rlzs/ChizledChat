@@ -10,7 +10,7 @@ let users = [];
 let voiceChatUsers = [];
 
 app.use(express.static('public'));
-const getTime = () => {
+const getcurrentTime = () => {
     const now = new Date();
     return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 };
