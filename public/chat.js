@@ -1,159 +1,110 @@
 const socket = io();
-
+let username = localStorage.getItem('username');
+let peerConnections = {};
 let localStream = null;
-let peerConnection = null;
-let audioContext = null;
-let analyser = null;
-let speaking = false;
-let speakingInterval = null;
-let currentUsers = [];
-const configuration = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+let voiceChatUsersList = document.getElementById('voice-chat-users');
 
-// DOM elements
-const voiceChatButton = document.getElementById("voice-chat-button");
-const disconnectButton = document.getElementById("disconnect-button");
-const voiceChatUsersList = document.getElementById("voice-chat-users");
-const remoteAudio = document.getElementById("remote-audio");
+// DOM elements for chat
+const usernameInput = document.getElementById("username-input");
+const setUsernameButton = document.getElementById("set-username");
+const messageInput = document.getElementById("message-input");
+const sendButton = document.getElementById("send-button");
+const startVoiceChatButton = document.getElementById("start-voice-chat");
 
-// Handle voice chat button click
-voiceChatButton.addEventListener("click", startVoiceChat);
-disconnectButton.addEventListener("click", disconnectVoiceChat);
+// Function to join chat with a username
+function joinChat(username) {
+    socket.emit("setUsername", username);
+}
 
-function startVoiceChat() {
+// Set username
+setUsernameButton.addEventListener("click", () => {
+    username = usernameInput.value.trim();
+    if (username) {
+        localStorage.setItem('username', username);
+        joinChat(username);
+        setUsernameButton.style.display = "none";
+        usernameInput.style.display = "none";
+    }
+});
+
+// Send chat message
+sendButton.addEventListener("click", () => {
+    const message = messageInput.value.trim();
+    if (message) {
+        socket.emit("sendMessage", { username, message });
+        messageInput.value = "";
+    }
+});
+
+// Display incoming messages
+socket.on('message', (data) => {
+    const chatBox = document.getElementById('chat-box');
+    const messageElement = document.createElement('p');
+    messageElement.textContent = `[${data.time}] ${data.username}: ${data.message}`;
+    chatBox.appendChild(messageElement);
+    chatBox.scrollTop = chatBox.scrollHeight;
+});
+
+// Receive and display chat history
+socket.on('chatHistory', (history) => {
+    const chatBox = document.getElementById('chat-box');
+    chatBox.innerHTML = ''; // Clear chat box before adding history
+    history.forEach(message => {
+        const messageElement = document.createElement('p');
+        messageElement.textContent = `[${message.time}] ${message.username}: ${message.message}`;
+        chatBox.appendChild(messageElement);
+    });
+    chatBox.scrollTop = chatBox.scrollHeight;
+});
+
+// Voice chat setup
+startVoiceChatButton.addEventListener("click", () => {
     navigator.mediaDevices.getUserMedia({ audio: true })
         .then(stream => {
             localStream = stream;
-            setupPeerConnection();
-            stream.getTracks().forEach(track => peerConnection.addTrack(track, stream));
-            startVoiceDetection(stream);
-
-            socket.emit("joinVoiceChat", { username: "TestUser" }); // Replace "TestUser" with actual username if available
-
-            voiceChatButton.style.display = "none";
-            disconnectButton.style.display = "inline-block";
+            socket.emit('joinVoiceChat', { username });
         })
-        .catch(error => console.error("Error accessing media devices.", error));
-}
+        .catch(error => {
+            console.error('Error accessing media devices.', error);
+        });
+});
 
-function disconnectVoiceChat() {
-    if (peerConnection) {
-        peerConnection.close();
-        peerConnection = null;
-    }
-
-    localStream.getTracks().forEach(track => track.stop());
-
-    socket.emit("leaveVoiceChat");
-
-    voiceChatButton.style.display = "inline-block";
-    disconnectButton.style.display = "none";
-    remoteAudio.style.display = "none";
-
-    stopVoiceDetection();
-}
-
-function setupPeerConnection() {
-    peerConnection = new RTCPeerConnection(configuration);
-
+// Handle WebRTC signaling
+socket.on('offer', async (id, description) => {
+    const peerConnection = new RTCPeerConnection();
+    peerConnections[id] = peerConnection;
     peerConnection.onicecandidate = event => {
         if (event.candidate) {
-            socket.emit("iceCandidate", event.candidate);
+            socket.emit('iceCandidate', { id, candidate: event.candidate });
         }
     };
-
     peerConnection.ontrack = event => {
-        remoteAudio.style.display = "block";
-        remoteAudio.srcObject = event.streams[0];
+        const audio = document.createElement('audio');
+        audio.srcObject = event.streams[0];
+        audio.play();
     };
-
-    peerConnection.createOffer()
-        .then(offer => {
-            return peerConnection.setLocalDescription(offer);
-        })
-        .then(() => {
-            socket.emit("offer", peerConnection.localDescription);
-        });
-}
-
-function startVoiceDetection(stream) {
-    audioContext = new AudioContext();
-    analyser = audioContext.createAnalyser();
-    const microphone = audioContext.createMediaStreamSource(stream);
-    microphone.connect(analyser);
-    analyser.fftSize = 512;
-
-    const dataArray = new Uint8Array(analyser.frequencyBinCount);
-
-    speakingInterval = setInterval(() => {
-        analyser.getByteFrequencyData(dataArray);
-        let sum = dataArray.reduce((acc, val) => acc + val, 0);
-        let isSpeaking = sum > 1000;
-
-        if (isSpeaking && !speaking) {
-            speaking = true;
-            socket.emit("userSpeaking", { username: "TestUser", speaking: true });
-        } else if (!isSpeaking && speaking) {
-            speaking = false;
-            socket.emit("userSpeaking", { username: "TestUser", speaking: false });
-        }
-    }, 100);
-}
-
-function stopVoiceDetection() {
-    if (speakingInterval) {
-        clearInterval(speakingInterval);
-    }
-    if (audioContext) {
-        audioContext.close();
-    }
-}
-
-socket.on("offer", description => {
-    peerConnection = new RTCPeerConnection(configuration);
-    peerConnection.setRemoteDescription(description);
-
+    await peerConnection.setRemoteDescription(new RTCSessionDescription(description));
+    const answer = await peerConnection.createAnswer();
+    await peerConnection.setLocalDescription(answer);
+    socket.emit('answer', id, peerConnection.localDescription);
     localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-
-    peerConnection.createAnswer()
-        .then(answer => {
-            return peerConnection.setLocalDescription(answer);
-        })
-        .then(() => {
-            socket.emit("answer", peerConnection.localDescription);
-        });
-
-    peerConnection.ontrack = event => {
-        remoteAudio.style.display = "block";
-        remoteAudio.srcObject = event.streams[0];
-    };
 });
 
-socket.on("answer", description => {
-    peerConnection.setRemoteDescription(description);
+socket.on('answer', async (id, description) => {
+    await peerConnections[id].setRemoteDescription(new RTCSessionDescription(description));
 });
 
-socket.on("iceCandidate", candidate => {
-    peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+socket.on('iceCandidate', async (id, candidate) => {
+    await peerConnections[id].addIceCandidate(new RTCIceCandidate(candidate));
 });
 
-socket.on("updateVoiceChatUsers", users => {
-    currentUsers = users;
-    updateVoiceChatUserList();
-});
-
-socket.on("userSpeaking", data => {
-    const userItem = document.getElementById(`user-${data.username}`);
-    if (userItem) {
-        userItem.style.fontWeight = data.speaking ? "bold" : "normal";
-    }
-});
-
-function updateVoiceChatUserList() {
+socket.on('updateVoiceChatUsers', users => {
     voiceChatUsersList.innerHTML = "";
-    currentUsers.forEach(user => {
+    users.forEach(user => {
         const li = document.createElement("li");
         li.textContent = user.username;
-        li.id = `user-${user.username}`;
         voiceChatUsersList.appendChild(li);
     });
-}
+});
+
+socket.on

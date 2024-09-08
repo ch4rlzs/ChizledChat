@@ -16,22 +16,21 @@
             <button id="set-username" class="btn">Set Username</button>
         </div>
         <div class="chat-section">
-            <div id="chat-box" class="chat-box"></div>
+            <div class="chat-box" id="chat-box"></div>
             <div class="input-section">
-                <input type="text" id="message-input" placeholder="Type a message">
+                <input type="text" id="message-input" placeholder="Type your message">
                 <button id="send-button" class="btn">Send</button>
             </div>
+        </div>
 
-            <!-- Voice Chat Section -->
-            <button id="voice-chat-button" class="btn">Start Voice Chat</button>
-            <button id="disconnect-button" class="btn" style="display: none;">Disconnect Voice Chat</button>
-
-            <h3>Currently in Voice Chat:</h3>
+        <!-- Add voice chat section here -->
+        <div class="voice-chat-section">
+            <h2>Voice Chat</h2>
+            <button id="start-voice-chat" class="btn">Start Voice Chat</button>
             <ul id="voice-chat-users"></ul>
-
-            <audio id="remote-audio" controls autoplay style="display: none;"></audio>
         </div>
     </div>
+
     <script src="/socket.io/socket.io.js"></script>
     <script src="chat.js"></script>
 </body>
