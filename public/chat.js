@@ -104,7 +104,7 @@ const startVoiceChatButton = document.getElementById('start-voice-chat');
 const disconnectVoiceChatButton = document.getElementById('disconnect-voice-chat');
 const voiceChatUsersList = document.getElementById('voice-chat-users');
 const speakingStatus = document.getElementById('speaking-status');
-
+const socket = io();
 
     // Start voice chat
     if (startVoiceChatButton) {
