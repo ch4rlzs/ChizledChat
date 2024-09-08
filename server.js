@@ -10,11 +10,10 @@ let users = [];
 let voiceChatUsers = [];
 
 app.use(express.static('public'));
-const getcurrentTime = () => {
-    const now = new Date();
-    return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-};
-
+function getTime() {
+    const date = new Date();
+    return `${date.getHours()}:${date.getMinutes()}`;
+}
 io.on('connection', socket => {
     console.log('A user connected:', socket.id);
 
@@ -80,10 +79,7 @@ io.on('connection', socket => {
     });
 });
 
-function getTime() {
-    const date = new Date();
-    return `${date.getHours()}:${date.getMinutes()}`;
-}
+
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
