@@ -164,3 +164,32 @@ h1 {
       font-size: 20px;
   }
 }
+#username-button, #send-button, #start-voice-chat, #disconnect-voice-chat {
+  background-color: #007BFF;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+#username-button:hover, #send-button:hover, #start-voice-chat:hover, #disconnect-voice-chat:hover {
+  background-color: #0056b3;
+}
+
+#chat-box-container {
+  background-color: #2a2a2a;
+  border: 1px solid #333;
+  padding: 10px;
+  height: 400px;
+  overflow-y: scroll;
+  margin-bottom: 10px;
+  border-radius: 5px;
+}
+
+/* Adjust the voice chat section to fit within the container */
+.voice-chat-section {
+  margin-top: 0;
+  border-top: 1px solid #333;
+}
