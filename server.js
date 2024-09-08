@@ -10,6 +10,10 @@ let users = [];
 let voiceChatUsers = [];
 
 app.use(express.static('public'));
+const getTime = () => {
+    const now = new Date();
+    return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+};
 
 io.on('connection', socket => {
     console.log('A user connected:', socket.id);

@@ -10,12 +10,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const setUsernameButton = document.getElementById("username-button");
     const messageInput = document.getElementById("message-input");
     const sendButton = document.getElementById("send-button");
-    const chatBox = document.getElementById('chat-box');
+    const chatBox = document.getElementById("chat-box-container");
     const startVoiceChatButton = document.getElementById('start-voice-chat');
     const disconnectVoiceChatButton = document.getElementById('disconnect-voice-chat');
     const voiceChatUsersList = document.getElementById('voice-chat-users');
     const speakingStatus = document.getElementById('speaking-status');
-
+    
     // Set username
     if (setUsernameButton) {
         setUsernameButton.addEventListener("click", () => {
