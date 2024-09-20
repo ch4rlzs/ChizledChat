@@ -13,6 +13,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const sendButton = document.getElementById("send-button");
     const chatBox = document.getElementById('chat-box-container');
     const chatInterface = document.getElementById('chat-interface');
+    const startVoiceChatButton = document.getElementById('start-voice-chat');
+    const disconnectVoiceChatButton = document.getElementById('disconnect-voice-chat');
+    const voiceChatUsersList = document.getElementById('voice-chat-users');
+    const speakingStatus = document.getElementById('speaking-status');
     
     function handleError(message) {
         console.error(message);
@@ -100,10 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     
 
-const startVoiceChatButton = document.getElementById('start-voice-chat');
-const disconnectVoiceChatButton = document.getElementById('disconnect-voice-chat');
-const voiceChatUsersList = document.getElementById('voice-chat-users');
-const speakingStatus = document.getElementById('speaking-status');
+
 
    
     // Start voice chat
