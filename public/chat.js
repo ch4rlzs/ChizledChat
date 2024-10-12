@@ -1,199 +1,52 @@
 document.addEventListener('DOMContentLoaded', () => {
     const socket = io();
     let username = localStorage.getItem('username');
-    let peerConnections = {};
+    let peerConnection;
     let localStream = null;
+    let remoteStream = null;
     let isVoiceChatting = false;
 
-    // DOM elements
-    const usernameContainer = document.getElementById("username-container");
-    const usernameInput = document.getElementById("username-input");
-    const setUsernameButton = document.getElementById("username-button");
-    const messageInput = document.getElementById("message-input");
-    const sendButton = document.getElementById("send-button");
-    const chatBox = document.getElementById('chat-box-container');
-    const chatInterface = document.getElementById('chat-interface');
     const startVoiceChatButton = document.getElementById('start-voice-chat');
     const disconnectVoiceChatButton = document.getElementById('disconnect-voice-chat');
     const voiceChatUsersList = document.getElementById('voice-chat-users');
     const speakingStatus = document.getElementById('speaking-status');
-    const WebSocket = require('ws');
-    // WebSocket connection
-const socket = new WebSocket('wss://chizledchat.onrender.com');
 
-socket.onopen = () => {
-  console.log('WebSocket connection opened');
-};
+    // ICE configuration for WebRTC
+    const iceConfig = {
+        iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' } // Google's public STUN server
+        ]
+    };
 
-socket.onerror = (error) => {
-  console.error('WebSocket error:', error);
-};
-
-// Handle incoming WebSocket messages
-socket.onmessage = async (event) => {
-  const data = JSON.parse(event.data);
-  
-  if (data.offer) {
-    await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
-    const answer = await peerConnection.createAnswer();
-    await peerConnection.setLocalDescription(answer);
-    socket.send(JSON.stringify({ type: 'answer', answer }));
-  }
-
-  if (data.answer) {
-    await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
-  }
-
-  if (data.candidate) {
-    await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
-  }
-};
-
-// WebRTC and media stream handling
-const peerConnection = new RTCPeerConnection();
-let localStream;
-
-peerConnection.onicecandidate = (event) => {
-  if (event.candidate) {
-    if (socket.readyState === WebSocket.OPEN) {
-      socket.send(JSON.stringify({ type: 'candidate', candidate: event.candidate }));
-    } else {
-      console.error('WebSocket is not open, cannot send candidate');
-    }
-  }
-};
-
-peerConnection.ontrack = (event) => {
-  const remoteAudio = new Audio();
-  remoteAudio.srcObject = event.streams[0];
-  remoteAudio.play();
-};
-
-// Start call button
-document.getElementById('startCall').onclick = async () => {
-  if (socket.readyState === WebSocket.OPEN) {
-    localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    localStream.getTracks().forEach((track) => peerConnection.addTrack(track, localStream));
-
-    const offer = await peerConnection.createOffer();
-    await peerConnection.setLocalDescription(offer);
-    socket.send(JSON.stringify({ type: 'offer', offer }));
-  } else {
-    console.error('WebSocket is not open yet.');
-  }
-};
-
-// Hang up button
-document.getElementById('hangUp').onclick = () => {
-  if (localStream) {
-    localStream.getTracks().forEach((track) => track.stop());
-  }
-  peerConnection.close();
-  if (socket.readyState === WebSocket.OPEN) {
-    socket.send(JSON.stringify({ type: 'hangup' }));
-  } else {
-    console.error('WebSocket is not open.');
-  }
-};
-
-    function handleError(message) {
-        console.error(message);
-        alert(message);
-    }
-
-    function setUsername(name) {
-        username = name;
-        localStorage.setItem('username', username);
-        console.log('Setting username:', username);
-        socket.emit("setUsername", username);
-        usernameContainer.style.display = "none";
-        chatInterface.style.display = "block";
-    }
-
-    // Check if username is already set
-    if (username) {
-        setUsername(username);
-    }
-
-    // Set username
-    if (setUsernameButton && usernameInput) {
-        setUsernameButton.addEventListener("click", () => {
-            const name = usernameInput.value.trim();
-            if (name) {
-                setUsername(name);
-            } else {
-                handleError('Username is empty');
-            }
-        });
-    } else {
-        handleError("Username input or button not found");
-    }
-
-    // Send chat message
-    if (sendButton && messageInput) {
-        sendButton.addEventListener("click", sendMessage);
-        messageInput.addEventListener("keypress", (e) => {
-            if (e.key === "Enter") {
-                sendMessage();
-            }
-        });
-    } else {
-        handleError("Send button or message input not found");
-    }
-
-    function sendMessage() {
-        const message = messageInput.value.trim();
-        if (message) {
-            console.log('Sending message:', message);
-            socket.emit("sendMessage", { username, message });
-            messageInput.value = "";
-        } else {
-            console.log('Message is empty');
-        }
-    }
-
-    // Handle incoming chat messages
-    socket.on('message', (data) => {
-        appendMessage(data);
-    });
-
-    // Receive and display chat history
-    socket.on('chatHistory', (history) => {
-        chatBox.innerHTML = ''; // Clear chat box before adding history
-        history.forEach(message => {
-            appendMessage(message);
-        });
-    });
-
-    function appendMessage(data) {
-        const messageElement = document.createElement('p');
-        const time = `[${data.time}] `;
-        const sender = `${data.username}: `;
-        const messageText = `${data.message}`;
-
-        messageElement.innerHTML = `${time}<strong>${sender}</strong>${messageText}`;
-        messageElement.classList.add('message');
-        if (data.username === 'System') {
-            messageElement.classList.add('system-message');
-        }
-        chatBox.appendChild(messageElement);
-        chatBox.scrollTop = chatBox.scrollHeight;
-    }
-
-    
-
-
-
-   
     // Start voice chat
     if (startVoiceChatButton) {
         startVoiceChatButton.addEventListener("click", async () => {
-            if (isVoiceChatting) return; // Already in a voice chat
+            if (isVoiceChatting) return;
 
             try {
                 localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                console.log('Starting voice chat');
-                socket.emit('startVoiceChat');
+                socket.emit('joinVoiceChat', username);
+
+                peerConnection = new RTCPeerConnection(iceConfig);
+                peerConnection.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        socket.emit('iceCandidate', { candidate: event.candidate, to: targetUserId });
+                    }
+                };
+
+                peerConnection.ontrack = (event) => {
+                    if (!remoteStream) {
+                        remoteStream = new Audio();
+                        remoteStream.srcObject = event.streams[0];
+                        remoteStream.play();
+                    }
+                };
+
+                localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+                
+                const offer = await peerConnection.createOffer();
+                await peerConnection.setLocalDescription(offer);
+                socket.emit('offer', { offer, to: targetUserId });
 
                 startVoiceChatButton.style.display = 'none';
                 disconnectVoiceChatButton.style.display = 'block';
@@ -204,14 +57,14 @@ document.getElementById('hangUp').onclick = () => {
         });
     }
 
-    // Disconnect from voice chat
+    // Disconnect voice chat
     if (disconnectVoiceChatButton) {
         disconnectVoiceChatButton.addEventListener("click", () => {
-            if (!isVoiceChatting) return; // Not in a voice chat
+            if (!isVoiceChatting) return;
 
             localStream.getTracks().forEach(track => track.stop());
-            console.log('Disconnecting voice chat');
-            socket.emit('disconnectVoiceChat');
+            peerConnection.close();
+            socket.emit('leaveVoiceChat', username);
 
             startVoiceChatButton.style.display = 'block';
             disconnectVoiceChatButton.style.display = 'none';
@@ -219,53 +72,25 @@ document.getElementById('hangUp').onclick = () => {
         });
     }
 
-    // Handle incoming chat messages
-    socket.on('message', (data) => {
-        const messageElement = document.createElement('p');
-        const time = `[${data.time}] `;
-        const sender = `${data.username}: `;
-        const messageText = `${data.message}`;
+    // Handle signaling messages
+    socket.on('offer', async ({ offer, from }) => {
+        peerConnection = new RTCPeerConnection(iceConfig);
 
-        messageElement.innerHTML = `${time}<strong>${sender}</strong>${messageText}`;
-        messageElement.classList.add('message');
-        if (data.username === 'System') {
-            messageElement.classList.add('system-message');
+        localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+        peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+        const answer = await peerConnection.createAnswer();
+        await peerConnection.setLocalDescription(answer);
+
+        socket.emit('answer', { answer, to: from });
+    });
+
+    socket.on('answer', (answer) => {
+        peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+    });
+
+    socket.on('iceCandidate', (data) => {
+        if (data.candidate) {
+            peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
         }
-        
-        chatBox.scrollTop = chatBox.scrollHeight;
-    });
-
-    // Receive and display chat history
-    socket.on('chatHistory', (history) => {
-       
-        history.forEach(message => {
-            const messageElement = document.createElement('p');
-            const time = `[${message.time}] `;
-            const sender = `${message.username}: `;
-            const messageText = `${message.message}`;
-
-            messageElement.innerHTML = `${time}<strong>${sender}</strong>${messageText}`;
-            messageElement.classList.add('message');
-            if (message.username === 'System') {
-                messageElement.classList.add('system-message');
-            }
-            chatBox.appendChild(messageElement);
-        });
-        chatBox.scrollTop = chatBox.scrollHeight;
-    });
-
-    // Update voice chat users
-    socket.on('updateVoiceChatUsers', (users) => {
-        voiceChatUsersList.innerHTML = ''; // Clear existing users list
-        users.forEach(user => {
-            const userElement = document.createElement('li');
-            userElement.textContent = user.username;
-            voiceChatUsersList.appendChild(userElement);
-        });
-    });
-
-    // Show speaking status
-    socket.on('speakingStatus', (data) => {
-        speakingStatus.textContent = data.isSpeaking ? `${data.username} is speaking` : '';
     });
 });
