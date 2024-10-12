@@ -17,7 +17,34 @@ document.addEventListener('DOMContentLoaded', () => {
     const disconnectVoiceChatButton = document.getElementById('disconnect-voice-chat');
     const voiceChatUsersList = document.getElementById('voice-chat-users');
     const speakingStatus = document.getElementById('speaking-status');
-    
+    const WebSocket = require('ws');
+    const wss = new WebSocket.Server({ port: 8080 });
+
+wss.on('connection', (ws) => {
+  ws.on('message', (message) => {
+    const data = JSON.parse(message);
+
+    // Relay WebRTC signaling messages
+    if (data.type === 'offer' || data.type === 'answer' || data.type === 'candidate') {
+      wss.clients.forEach((client) => {
+        if (client !== ws && client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify(data)); // Relay offer, answer, or candidate
+        }
+      });
+    }
+
+    // Handle hang-up event
+    if (data.type === 'hangup') {
+      wss.clients.forEach((client) => {
+        if (client !== ws && client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify({ type: 'hangup' }));
+        }
+      });
+    }
+
+    // You may already have other message handling logic for chat, which should remain untouched
+  });
+});
     function handleError(message) {
         console.error(message);
         alert(message);
