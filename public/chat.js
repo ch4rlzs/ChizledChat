@@ -18,33 +18,84 @@ document.addEventListener('DOMContentLoaded', () => {
     const voiceChatUsersList = document.getElementById('voice-chat-users');
     const speakingStatus = document.getElementById('speaking-status');
     const WebSocket = require('ws');
-    const wss = new WebSocket.Server({ port: 8080 });
+    // WebSocket connection
+const socket = new WebSocket('wss://chizledchat.onrender.com');
 
-wss.on('connection', (ws) => {
-  ws.on('message', (message) => {
-    const data = JSON.parse(message);
+socket.onopen = () => {
+  console.log('WebSocket connection opened');
+};
 
-    // Relay WebRTC signaling messages
-    if (data.type === 'offer' || data.type === 'answer' || data.type === 'candidate') {
-      wss.clients.forEach((client) => {
-        if (client !== ws && client.readyState === WebSocket.OPEN) {
-          client.send(JSON.stringify(data)); // Relay offer, answer, or candidate
-        }
-      });
+socket.onerror = (error) => {
+  console.error('WebSocket error:', error);
+};
+
+// Handle incoming WebSocket messages
+socket.onmessage = async (event) => {
+  const data = JSON.parse(event.data);
+  
+  if (data.offer) {
+    await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+    const answer = await peerConnection.createAnswer();
+    await peerConnection.setLocalDescription(answer);
+    socket.send(JSON.stringify({ type: 'answer', answer }));
+  }
+
+  if (data.answer) {
+    await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+  }
+
+  if (data.candidate) {
+    await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+  }
+};
+
+// WebRTC and media stream handling
+const peerConnection = new RTCPeerConnection();
+let localStream;
+
+peerConnection.onicecandidate = (event) => {
+  if (event.candidate) {
+    if (socket.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({ type: 'candidate', candidate: event.candidate }));
+    } else {
+      console.error('WebSocket is not open, cannot send candidate');
     }
+  }
+};
 
-    // Handle hang-up event
-    if (data.type === 'hangup') {
-      wss.clients.forEach((client) => {
-        if (client !== ws && client.readyState === WebSocket.OPEN) {
-          client.send(JSON.stringify({ type: 'hangup' }));
-        }
-      });
-    }
+peerConnection.ontrack = (event) => {
+  const remoteAudio = new Audio();
+  remoteAudio.srcObject = event.streams[0];
+  remoteAudio.play();
+};
 
-    // You may already have other message handling logic for chat, which should remain untouched
-  });
-});
+// Start call button
+document.getElementById('startCall').onclick = async () => {
+  if (socket.readyState === WebSocket.OPEN) {
+    localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    localStream.getTracks().forEach((track) => peerConnection.addTrack(track, localStream));
+
+    const offer = await peerConnection.createOffer();
+    await peerConnection.setLocalDescription(offer);
+    socket.send(JSON.stringify({ type: 'offer', offer }));
+  } else {
+    console.error('WebSocket is not open yet.');
+  }
+};
+
+// Hang up button
+document.getElementById('hangUp').onclick = () => {
+  if (localStream) {
+    localStream.getTracks().forEach((track) => track.stop());
+  }
+  peerConnection.close();
+  if (socket.readyState === WebSocket.OPEN) {
+    socket.send(JSON.stringify({ type: 'hangup' }));
+  } else {
+    console.error('WebSocket is not open.');
+  }
+};
+
     function handleError(message) {
         console.error(message);
         alert(message);
