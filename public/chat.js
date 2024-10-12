@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const socket = io();
+    let socket = new WebSocket('wss://your-server-url'); // Ensure correct URL
+    
     let username = localStorage.getItem('username');
     let peerConnection;
     let localStream = null;
@@ -10,6 +11,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const disconnectVoiceChatButton = document.getElementById('disconnect-voice-chat');
     const voiceChatUsersList = document.getElementById('voice-chat-users');
     const speakingStatus = document.getElementById('speaking-status');
+
+    // WebSocket connection state handling
+    socket.onopen = () => {
+        console.log("WebSocket connection opened.");
+    };
+
+    socket.onerror = (error) => {
+        console.error('WebSocket Error:', error);
+    };
+
+    socket.onclose = () => {
+        console.log('WebSocket connection closed.');
+    };
 
     // ICE configuration for WebRTC
     const iceConfig = {
@@ -25,12 +39,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
             try {
                 localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                socket.emit('joinVoiceChat', username);
+                if (socket.readyState === WebSocket.OPEN) {
+                    socket.send(JSON.stringify({ type: 'joinVoiceChat', username }));
+                } else {
+                    console.error('WebSocket not open, cannot join voice chat.');
+                }
 
                 peerConnection = new RTCPeerConnection(iceConfig);
                 peerConnection.onicecandidate = (event) => {
-                    if (event.candidate) {
-                        socket.emit('iceCandidate', { candidate: event.candidate, to: targetUserId });
+                    if (event.candidate && socket.readyState === WebSocket.OPEN) {
+                        socket.send(JSON.stringify({ type: 'iceCandidate', candidate: event.candidate }));
+                    } else {
+                        console.error('WebSocket not open, cannot send candidate.');
                     }
                 };
 
@@ -46,7 +66,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 const offer = await peerConnection.createOffer();
                 await peerConnection.setLocalDescription(offer);
-                socket.emit('offer', { offer, to: targetUserId });
+                if (socket.readyState === WebSocket.OPEN) {
+                    socket.send(JSON.stringify({ type: 'offer', offer }));
+                } else {
+                    console.error('WebSocket not open, cannot send offer.');
+                }
 
                 startVoiceChatButton.style.display = 'none';
                 disconnectVoiceChatButton.style.display = 'block';
@@ -64,7 +88,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
             localStream.getTracks().forEach(track => track.stop());
             peerConnection.close();
-            socket.emit('leaveVoiceChat', username);
+            if (socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({ type: 'leaveVoiceChat', username }));
+            } else {
+                console.error('WebSocket not open, cannot leave voice chat.');
+            }
 
             startVoiceChatButton.style.display = 'block';
             disconnectVoiceChatButton.style.display = 'none';
@@ -73,24 +101,31 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Handle signaling messages
-    socket.on('offer', async ({ offer, from }) => {
-        peerConnection = new RTCPeerConnection(iceConfig);
+    socket.onmessage = async (event) => {
+        const data = JSON.parse(event.data);
 
-        localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-        peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
-        const answer = await peerConnection.createAnswer();
-        await peerConnection.setLocalDescription(answer);
+        if (data.type === 'offer') {
+            peerConnection = new RTCPeerConnection(iceConfig);
+            localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+            const answer = await peerConnection.createAnswer();
+            await peerConnection.setLocalDescription(answer);
 
-        socket.emit('answer', { answer, to: from });
-    });
-
-    socket.on('answer', (answer) => {
-        peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
-    });
-
-    socket.on('iceCandidate', (data) => {
-        if (data.candidate) {
-            peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+            if (socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({ type: 'answer', answer, to: data.from }));
+            } else {
+                console.error('WebSocket not open, cannot send answer.');
+            }
         }
-    });
+
+        if (data.type === 'answer') {
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+        }
+
+        if (data.type === 'iceCandidate') {
+            if (data.candidate) {
+                peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+            }
+        }
+    };
 });
