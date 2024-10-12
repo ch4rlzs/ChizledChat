@@ -28,13 +28,68 @@
             </div>
         </div>
 
-        <div class="voice-chat-section">
-            <h2>Voice Chat</h2>
-            <button id="start-voice-chat" class="btn">Start Voice Chat (no audio, no user display)</button>
-            <button id="disconnect-voice-chat" class="btn" style="display: none;">Disconnect</button>
-            <div id="speaking-status"></div>
-            <ul id="voice-chat-users"></ul>
-        </div>
-    </div>
-</body>
-</html>
+       <!-- Add these buttons for initiating and hanging up voice calls -->
+<button id="startCall">Start Voice Call</button>
+<button id="hangUp">Hang Up Call</button>
+
+<script>
+  // Existing WebSocket connection
+  const socket = new WebSocket('wss://your-server-url'); // Update this if necessary
+  
+  // WebRTC and media stream handling
+  const peerConnection = new RTCPeerConnection();
+  let localStream;
+
+  // Receive signaling messages from the WebSocket server
+  socket.onmessage = async (event) => {
+    const data = JSON.parse(event.data);
+    
+    if (data.offer) {
+      await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+      const answer = await peerConnection.createAnswer();
+      await peerConnection.setLocalDescription(answer);
+      socket.send(JSON.stringify({ type: 'answer', answer }));
+    }
+
+    if (data.answer) {
+      await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+    }
+
+    if (data.candidate) {
+      await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+    }
+  };
+
+  // Handle ICE candidates
+  peerConnection.onicecandidate = (event) => {
+    if (event.candidate) {
+      socket.send(JSON.stringify({ type: 'candidate', candidate: event.candidate }));
+    }
+  };
+
+  // Play incoming audio stream
+  peerConnection.ontrack = (event) => {
+    const remoteAudio = new Audio();
+    remoteAudio.srcObject = event.streams[0];
+    remoteAudio.play();
+  };
+
+  // Start call when the button is clicked
+  document.getElementById('startCall').onclick = async () => {
+    localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    localStream.getTracks().forEach((track) => peerConnection.addTrack(track, localStream));
+
+    const offer = await peerConnection.createOffer();
+    await peerConnection.setLocalDescription(offer);
+    socket.send(JSON.stringify({ type: 'offer', offer }));
+  };
+
+  // Hang up call
+  document.getElementById('hangUp').onclick = () => {
+    if (localStream) {
+      localStream.getTracks().forEach((track) => track.stop());
+    }
+    peerConnection.close();
+    socket.send(JSON.stringify({ type: 'hangup' }));
+  };
+</script>
