@@ -47,6 +47,7 @@ io.on('connection', socket => {
 
         io.emit('message', messageData); // Broadcast message to all users
     });
+
     // Handle voice chat start
     socket.on('joinVoiceChat', (username) => {
         voiceChatUsers.push({ id: socket.id, username });
@@ -60,6 +61,7 @@ io.on('connection', socket => {
         io.emit('updateVoiceChatUsers', voiceChatUsers.map(u => u.username));
     });
 
+    // Handle WebRTC signaling
     socket.on('offer', ({ offer, to }) => {
         socket.to(to).emit('offer', { offer, from: socket.id });
     });
