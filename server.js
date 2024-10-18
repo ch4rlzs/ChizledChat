@@ -10,7 +10,10 @@ let users = [];
 let voiceChatUsers = [];
 
 app.use(express.static('public'));
-
+document.getElementById('colorInput').addEventListener('input', function() {
+    const chatContainer = document.getElementById('chatContainer');
+    chatContainer.style.backgroundColor = this.value;
+});
 function getTime() {
     const date = new Date();
     return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
