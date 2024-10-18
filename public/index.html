@@ -3,93 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chizled Chat Room</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="chat.js"></script>
+    <title>ChizledChat</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Chizled Chat Room</h1>
-        </header>
+    <div class="chat-container" id="chatContainer">
+        <div class="chat-message">Welcome to ChizledChat!</div>
+        <div class="chat-message">Feel free to customize your chat color.</div>
+    </div>
 
-        <div id="username-container" class="username-section">
-            <input type="text" id="username-input" placeholder="Enter your username">
-            <button id="username-button" class="btn">Join Chat</button>
-        </div>
+    <div class="color-picker">
+        <label for="colorInput">Choose Chat Color:</label>
+        <input type="color" id="colorInput" value="#ffffff">
+    </div>
 
-        <div id="chat-interface" class="chat-section" style="display: none;">
-            <div id="chat-box-container" class="chat-box"></div>
-
-            <div class="input-section">
-                <input type="text" id="message-input" placeholder="Type your message">
-                <button id="send-button" class="btn">Send</button>
-            </div>
-        </div>
-
-       <!-- Add these buttons for initiating and hanging up voice calls -->
-<button id="startCall">Start Voice Call</button>
-<button id="hangUp">Hang Up Call</button>
-
-<script>
-  // Existing WebSocket connection
-  const socket = new WebSocket('wss://your-server-url'); // Update this if necessary
-  
-  // WebRTC and media stream handling
-  const peerConnection = new RTCPeerConnection();
-  let localStream;
-
-  // Receive signaling messages from the WebSocket server
-  socket.onmessage = async (event) => {
-    const data = JSON.parse(event.data);
-    
-    if (data.offer) {
-      await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
-      const answer = await peerConnection.createAnswer();
-      await peerConnection.setLocalDescription(answer);
-      socket.send(JSON.stringify({ type: 'answer', answer }));
-    }
-
-    if (data.answer) {
-      await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
-    }
-
-    if (data.candidate) {
-      await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
-    }
-  };
-
-  // Handle ICE candidates
-  peerConnection.onicecandidate = (event) => {
-    if (event.candidate) {
-      socket.send(JSON.stringify({ type: 'candidate', candidate: event.candidate }));
-    }
-  };
-
-  // Play incoming audio stream
-  peerConnection.ontrack = (event) => {
-    const remoteAudio = new Audio();
-    remoteAudio.srcObject = event.streams[0];
-    remoteAudio.play();
-  };
-
-  // Start call when the button is clicked
-  document.getElementById('startCall').onclick = async () => {
-    localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    localStream.getTracks().forEach((track) => peerConnection.addTrack(track, localStream));
-
-    const offer = await peerConnection.createOffer();
-    await peerConnection.setLocalDescription(offer);
-    socket.send(JSON.stringify({ type: 'offer', offer }));
-  };
-
-  // Hang up call
-  document.getElementById('hangUp').onclick = () => {
-    if (localStream) {
-      localStream.getTracks().forEach((track) => track.stop());
-    }
-    peerConnection.close();
-    socket.send(JSON.stringify({ type: 'hangup' }));
-  };
-</script>
+    <script src="script.js"></script>
+</body>
+</html>
