@@ -1,4 +1,18 @@
-/* General styles */
+
+.chat-container {
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin-bottom: 20px;
+    background-color: #fff;
+}
+
+.chat-message {
+    margin: 5px 0;
+}
+
+.color-picker {
+    margin-top: 20px;
+}
 body {
   font-family: 'Arial', sans-serif;
   background-color: #1a1a1a;
