@@ -1,42 +1,49 @@
 // Connect to server via Socket.io
 const socket = io();
 
+document.getElementById('registerButton').addEventListener('click', function() {
+    const username = document.getElementById('registerUsername').value;
+    const password = document.getElementById('registerPassword').value;
+
+    fetch('/register', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ username, password })
+    })
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById('registerMessage').innerText = data.message;
+    })
+    .catch(err => {
+        document.getElementById('registerMessage').innerText = 'Error registering user.';
+    });
+});
+
 document.getElementById('loginButton').addEventListener('click', function() {
-    const username = document.getElementById('usernameInput').value;
-    const password = document.getElementById('passwordInput').value;
+    const username = document.getElementById('loginUsername').value;
+    const password = document.getElementById('loginPassword').value;
 
-    // Perform your login logic here
-    console.log('Username:', username);
-    console.log('Password:', password);
-    
-    // Example of sending data to the server (if applicable)
-    // socket.emit('login', { username, password });
-
-
-    if (username) {
-        // Send POST request to server to handle login
-        fetch('/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Login successful, show chat container
-                document.getElementById('login-container').style.display = 'none';
-                document.getElementById('chat-container').style.display = 'block';
-
-                // Set username and inform server
-                socket.emit('setUsername', username);
-            } else {
-                alert(data.message || 'Login failed');
-            }
-        })
-        .catch(error => console.error('Error:', error));
-    } else {
-        alert('Please enter a username');
-    }
+    fetch('/login', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ username, password })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (response.ok) {
+            document.getElementById('loginMessage').innerText = data.message;
+            // Redirect to chat or load chat interface here
+        } else {
+            document.getElementById('loginMessage').innerText = data.message;
+        }
+    })
+    .catch(err => {
+        document.getElementById('loginMessage').innerText = 'Error logging in.';
+    });
 });
 
 // Handle sending messages
