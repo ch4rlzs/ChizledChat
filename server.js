@@ -18,7 +18,6 @@ let users = [];
 // Serve static files from the "public" directory
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Handle socket connections
 io.on('connection', socket => {
     console.log('A user connected:', socket.id);
 
@@ -45,11 +44,6 @@ io.on('connection', socket => {
         }
 
         io.emit('message', messageData); // Broadcast message to all users
-    });
-
-    // Handle typing notifications (optional)
-    socket.on('typing', data => {
-        socket.broadcast.emit('typing', data);
     });
 
     // Handle user disconnecting
