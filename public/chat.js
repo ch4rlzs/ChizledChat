@@ -1,8 +1,17 @@
 // Connect to server via Socket.io
 const socket = io();
 
-document.getElementById('login-button').addEventListener('click', () => {
-    const username = document.getElementById('username').value.trim();
+document.getElementById('loginButton').addEventListener('click', function() {
+    const username = document.getElementById('usernameInput').value;
+    const password = document.getElementById('passwordInput').value;
+
+    // Perform your login logic here
+    console.log('Username:', username);
+    console.log('Password:', password);
+    
+    // Example of sending data to the server (if applicable)
+    // socket.emit('login', { username, password });
+
 
     if (username) {
         // Send POST request to server to handle login
