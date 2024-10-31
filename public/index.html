@@ -3,26 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chizled Chat</title>
+    <title>Chat App</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <!-- Login Container -->
-    <div id="login-container">
-        <h2>Login</h2>
-        <input type="text" id="username" placeholder="Enter your username" required>
-        <button id="login-button">Login</button>
+    <div class="login-container">
+        <input type="text" id="usernameInput" placeholder="Username" />
+        <input type="password" id="passwordInput" placeholder="Password" />
+        <button id="loginButton">Login</button>
+        <div id="loginMessage"></div>
     </div>
-
-    <!-- Chat Container (Hidden initially) -->
-    <div id="chat-container" style="display: none;">
-        <h2>Chat Room</h2>
-        <div id="messages"></div>
-        <input type="text" id="message-input" placeholder="Type your message here">
-        <button id="send-button">Send</button>
+    
+    <div id="chatContainer" style="display:none;">
+        <div id="chatHistory"></div>
+        <input type="text" id="messageInput" placeholder="Type your message" />
+        <button id="sendMessageButton">Send</button>
     </div>
-
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="script.js"></script>
-</body>
-</html>
