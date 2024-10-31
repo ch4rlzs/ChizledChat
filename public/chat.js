@@ -47,7 +47,7 @@ document.getElementById('loginButton').addEventListener('click', function() {
 });
 
 // Handle sending messages
-document.getElementById('send-button').addEventListener('click', () => {
+document.getElementById('sendButton').addEventListener('click', () => {
     const messageInput = document.getElementById('message-input');
     const message = messageInput.value.trim();
 
