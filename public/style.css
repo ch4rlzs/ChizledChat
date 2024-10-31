@@ -1,209 +1,63 @@
-
-.chat-container {
-    border: 1px solid #ccc;
-    padding: 10px;
-    margin-bottom: 20px;
-    background-color: #fff;
-}
-
-.chat-message {
-    margin: 5px 0;
-}
-
-.color-picker {
-    margin-top: 20px;
-}
 body {
-  font-family: 'Arial', sans-serif;
-  background-color: #1a1a1a;
-  color: #ffffff;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
 }
 
 .container {
-  width: 100%;
-  max-width: 600px;
-  background-color: #2c2c2c;
-  box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.5);
-  border-radius: 10px;
-  overflow: hidden;
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+    width: 300px;
+    text-align: center;
 }
 
-header {
-  background-color: #007BFF;
-  padding: 20px;
-  text-align: center;
-  color: white;
+input {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 3px;
+    border: 1px solid #ccc;
 }
 
-h1 {
-  margin: 0;
-  font-size: 24px;
-  text-transform: uppercase;
+button {
+    padding: 10px 20px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
 }
 
-.username-section {
-  padding: 20px;
-  text-align: center;
+button:hover {
+    background-color: #45a049;
 }
 
-.username-section input {
-  padding: 10px;
-  width: 80%;
-  max-width: 400px;
-  margin: 10px 0;
-  border: 1px solid #007BFF;
-  border-radius: 5px;
-  background-color: #333;
-  color: #fff;
+#chat-box {
+    border: 1px solid #ccc;
+    height: 200px;
+    overflow-y: scroll;
+    padding: 10px;
+    margin-bottom: 10px;
 }
 
-.btn {
-  background-color: #007BFF;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
+.message {
+    display: flex;
+    justify-content: space-between;
+    margin: 5px 0;
 }
-
-.btn:hover {
-  background-color: #0056b3;
+.delete-btn {
+    background-color: red;
+    border: none;
+    color: white;
+    padding: 2px 5px;
+    cursor: pointer;
 }
-
-/* Chat section */
-.chat-section {
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-}
-
-.chat-box {
-  background-color: #2a2a2a;
-  border: 1px solid #333;
-  padding: 10px;
-  height: 400px;
-  overflow-y: scroll;
-  margin-bottom: 10px;
-  border-radius: 5px;
-}
-
-.chat-box p {
-  margin: 5px 0;
-  padding: 10px;
-  border-radius: 5px;
-  color: #fff;
-  font-size: 14px;
-}
-
-.chat-box .message {
-  background-color: #333;
-}
-
-.chat-box .system-message {
-  color: #ffcc00;
-  font-style: italic;
-}
-
-.input-section {
-  display: flex;
-  align-items: center;
-}
-
-#message-input {
-  flex: 1;
-  padding: 10px;
-  border: 1px solid #007BFF;
-  border-radius: 5px;
-  background-color: #333;
-  color: #fff;
-  margin-right: 10px;
-}
-
-#send-button {
-  padding: 10px 15px;
-  background-color: #007BFF;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-#send-button:hover {
-  background-color: #0056b3;
-}
-
-/* Voice Chat Section */
-.voice-chat-section {
-  margin-top: 20px;
-  padding: 20px;
-  background-color: #333;
-  border-radius: 5px;
-}
-
-.voice-chat-section h2 {
-  color: #fff;
-  margin-bottom: 10px;
-}
-
-.voice-chat-section ul {
-  list-style-type: none;
-  padding: 0;
-}
-
-.voice-chat-section li {
-  color: #fff;
-  margin: 5px 0;
-}
-
-#speaking-status {
-  color: #ffcc00;
-  margin-top: 10px;
-}
-
-/* Responsive */
-@media (max-width: 600px) {
-  .container {
-      width: 95%;
-  }
-
-  h1 {
-      font-size: 20px;
-  }
-}
-#username-button, #send-button, #start-voice-chat, #disconnect-voice-chat {
-  background-color: #007BFF;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-#username-button:hover, #send-button:hover, #start-voice-chat:hover, #disconnect-voice-chat:hover {
-  background-color: #0056b3;
-}
-
-#chat-box-container {
-  background-color: #2a2a2a;
-  border: 1px solid #333;
-  padding: 10px;
-  height: 400px;
-  overflow-y: scroll;
-  margin-bottom: 10px;
-  border-radius: 5px;
-}
-
-/* Adjust the voice chat section to fit within the container */
-.voice-chat-section {
-  margin-top: 0;
-  border-top: 1px solid #333;
+.delete-btn:hover {
+    background-color: darkred;
 }
