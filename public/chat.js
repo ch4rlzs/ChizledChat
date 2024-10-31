@@ -1,58 +1,46 @@
-const users = [
-    { username: "user", password: "userpass", role: "user" },
-    { username: "admin", password: "adminpass", role: "admin" }
-];
+// Connect to the server using Socket.io
+const socket = io();
 
-let currentUserRole = null;
+document.getElementById('login-button').addEventListener('click', () => {
+    const username = document.getElementById('username').value.trim();
 
-function login() {
-    const username = document.getElementById("username").value;
-    const password = document.getElementById("password").value;
-    const user = users.find(u => u.username === username && u.password === password);
+    if (username) {
+        // Emit the username to the server
+        socket.emit('setUsername', username);
 
-    if (user) {
-        currentUserRole = user.role;
-        if (user.role === "admin") {
-            document.getElementById("admin-page").style.display = "block";
-        } else {
-            document.getElementById("chat-section").style.display = "block";
-        }
-        document.getElementById("login-section").style.display = "none";
+        // Hide the login container and show the chat container
+        document.getElementById('login-container').style.display = 'none';
+        document.getElementById('chat-container').style.display = 'block';
     } else {
-        alert("Invalid credentials!");
+        alert('Please enter a username');
     }
-}
+});
 
-function logout() {
-    document.getElementById("chat-section").style.display = "none";
-    document.getElementById("admin-page").style.display = "none";
-    document.getElementById("login-section").style.display = "block";
-    currentUserRole = null;
-}
+// Handle sending a message
+document.getElementById('send-button').addEventListener('click', () => {
+    const messageInput = document.getElementById('message-input');
+    const message = messageInput.value.trim();
 
-function sendMessage() {
-    const message = document.getElementById("message").value;
-    if (message.trim() === "") return;
-
-    const chatBox = document.getElementById("chat-box");
-    const messageContainer = document.createElement("div");
-    messageContainer.className = "message";
-
-    // Display message text
-    const messageText = document.createElement("span");
-    messageText.innerText = message;
-    messageContainer.appendChild(messageText);
-
-    // If user is admin, show delete button
-    if (currentUserRole === "admin") {
-        const deleteBtn = document.createElement("button");
-        deleteBtn.innerText = "Delete";
-        deleteBtn.className = "delete-btn";
-        deleteBtn.onclick = () => messageContainer.remove();
-        messageContainer.appendChild(deleteBtn);
+    if (message) {
+        // Emit the message to the server
+        socket.emit('sendMessage', { username, message });
+        messageInput.value = ''; // Clear input
     }
+});
 
-    chatBox.appendChild(messageContainer);
-    document.getElementById("message").value = "";
-    chatBox.scrollTop = chatBox.scrollHeight;
-}
+// Display incoming messages
+socket.on('message', data => {
+    const messageElement = document.createElement('div');
+    messageElement.textContent = `[${data.time}] ${data.username}: ${data.message}`;
+    document.getElementById('messages').appendChild(messageElement);
+});
+
+// Show chat history on load
+socket.on('chatHistory', history => {
+    const messagesContainer = document.getElementById('messages');
+    history.forEach(msg => {
+        const messageElement = document.createElement('div');
+        messageElement.textContent = `[${msg.time}] ${msg.username}: ${msg.message}`;
+        messagesContainer.appendChild(messageElement);
+    });
+});
