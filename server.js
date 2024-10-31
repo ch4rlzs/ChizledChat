@@ -6,7 +6,7 @@ const fs = require('fs');
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
-
+const fs = require('fs');
 let chatHistory = [];
 let users = [];
 
@@ -27,6 +27,16 @@ app.get('/', (req, res) => {
 });
 
 // Handle user registration
+try {
+    const data = fs.readFileSync('users.json', 'utf8');
+    if (data) {
+        users = JSON.parse(data); // Only parse if data is not empty
+    }
+} catch (error) {
+    console.error('Error reading or parsing users.json:', error);
+    users = []; // Initialize to empty array if there's an error
+}
+
 app.post('/register', (req, res) => {
     const { username, password } = req.body;
     
