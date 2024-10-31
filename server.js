@@ -6,7 +6,6 @@ const fs = require('fs');
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
-const fs = require('fs');
 let chatHistory = [];
 let users = [];
 
