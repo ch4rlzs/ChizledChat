@@ -1,9 +1,8 @@
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
-const path = require('path');
-require('dotenv').config();
-
+const bodyParser = require('body-parser');
+const fs = require('fs');
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
@@ -11,74 +10,73 @@ const io = socketIo(server);
 let chatHistory = [];
 let users = [];
 
-// Middleware to parse JSON data
-app.use(express.json());
+// Middleware
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static('public'));
 
-// Serve static files from the public directory
-app.use(express.static(path.join(__dirname, 'public')));
+// Load existing users from a file (if exists)
+if (fs.existsSync('users.json')) {
+    const data = fs.readFileSync('users.json');
+    users = JSON.parse(data);
+}
 
-// Route to handle login requests
-app.post('/login', (req, res) => {
-    const { username } = req.body;
-
-    // Check if username is provided
-    if (!username || username.trim() === '') {
-        return res.status(400).json({ success: false, message: 'Username is required' });
-    }
-
-    // Respond with success and send username back to client
-    res.json({ success: true, username });
+// Serve index.html
+app.get('/', (req, res) => {
+    res.sendFile(__dirname + '/public/index.html');
 });
 
-// Socket.io connection handling
-io.on('connection', (socket) => {
-    console.log('A user connected:', socket.id);
+// Handle user registration
+app.post('/register', (req, res) => {
+    const { username, password } = req.body;
+    
+    // Check if user already exists
+    if (users.find(user => user.username === username)) {
+        return res.status(400).json({ message: 'User already exists' });
+    }
+    
+    // Add new user
+    users.push({ username, password });
+    fs.writeFileSync('users.json', JSON.stringify(users)); // Save users to file
+    res.status(201).json({ message: 'User registered successfully' });
+});
 
-    // Send chat history to new user
+// Handle user login
+app.post('/login', (req, res) => {
+    const { username, password } = req.body;
+    const user = users.find(user => user.username === username && user.password === password);
+    
+    if (user) {
+        res.json({ message: 'Login successful' });
+    } else {
+        res.status(401).json({ message: 'Invalid credentials' });
+    }
+});
+
+io.on('connection', socket => {
+    console.log('A user connected:', socket.id);
     socket.emit('chatHistory', chatHistory);
 
-    // Listen for username set by client
-    socket.on('setUsername', (username) => {
-        users.push({ id: socket.id, username });
-        console.log(`${username} joined the chat`);
-
-        // Notify others
-        socket.broadcast.emit('message', { username: 'System', message: `${username} has joined the chat`, time: getTime() });
-    });
-
-    // Handle incoming messages
-    socket.on('sendMessage', (data) => {
+    socket.on('sendMessage', data => {
         const messageData = { username: data.username, message: data.message, time: getTime() };
         chatHistory.push(messageData);
 
-        // Limit chat history to 100 messages
         if (chatHistory.length > 100) {
             chatHistory.shift();
         }
 
-        // Broadcast message to all users
         io.emit('message', messageData);
     });
 
-    // Handle user disconnection
     socket.on('disconnect', () => {
-        const user = users.find((u) => u.id === socket.id);
-        if (user) {
-            console.log(`${user.username} left the chat`);
-            users = users.filter((u) => u.id !== socket.id);
-
-            // Notify others that the user has left
-            io.emit('message', { username: 'System', message: `${user.username} has left the chat`, time: getTime() });
-        }
+        console.log('User disconnected:', socket.id);
     });
 });
 
-// Helper function to get current time
 function getTime() {
     const date = new Date();
-    return `${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
+    return `${date.getHours()}:${date.getMinutes()}`;
 }
 
-// Start server
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));

@@ -7,15 +7,25 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="login-container">
-        <input type="text" id="usernameInput" placeholder="Username" />
-        <input type="password" id="passwordInput" placeholder="Password" />
-        <button id="loginButton">Login</button>
-        <div id="loginMessage"></div>
+    <div class="container">
+        <h1>Chat Application</h1>
+        <div id="loginForm">
+            <h2>Login</h2>
+            <input type="text" id="loginUsername" placeholder="Username" required>
+            <input type="password" id="loginPassword" placeholder="Password" required>
+            <button id="loginButton">Login</button>
+            <p id="loginMessage"></p>
+        </div>
+        <div id="registerForm">
+            <h2>Register</h2>
+            <input type="text" id="registerUsername" placeholder="Username" required>
+            <input type="password" id="registerPassword" placeholder="Password" required>
+            <button id="registerButton">Register</button>
+            <p id="registerMessage"></p>
+        </div>
     </div>
-    
-    <div id="chatContainer" style="display:none;">
-        <div id="chatHistory"></div>
-        <input type="text" id="messageInput" placeholder="Type your message" />
-        <button id="sendMessageButton">Send</button>
-    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
