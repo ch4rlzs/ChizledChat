@@ -3,18 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ChizledChat</title>
+    <title>Simple Chat Login</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="chat-container" id="chatContainer">
-        <div class="chat-message">Welcome to ChizledChat!</div>
-        <div class="chat-message">Feel free to customize your chat color.</div>
-    </div>
+    <div class="container">
+        <h2>Welcome to ChatApp</h2>
+        
+        <!-- Login Form -->
+        <div id="login-section">
+            <input type="text" id="username" placeholder="Username">
+            <input type="password" id="password" placeholder="Password">
+            <button onclick="login()">Login</button>
+        </div>
 
-    <div class="color-picker">
-        <label for="colorInput">Choose Chat Color:</label>
-        <input type="color" id="colorInput" value="#ffffff">
+        <!-- Chat Section -->
+        <div id="chat-section" style="display: none;">
+            <h3>Chat Room</h3>
+            <div id="chat-box"></div>
+            <input type="text" id="message" placeholder="Type a message">
+            <button onclick="sendMessage()">Send</button>
+            <button onclick="logout()">Logout</button>
+        </div>
+
+        <!-- Admin Page Link -->
+        <div id="admin-page" style="display: none;">
+            <h3>Admin Panel</h3>
+            <p>Welcome, Admin! Manage the chat messages here.</p>
+            <button onclick="logout()">Logout</button>
+        </div>
     </div>
 
     <script src="script.js"></script>
