@@ -2,56 +2,70 @@ const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 const path = require('path');
+require('dotenv').config();
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server, {
-    cors: {
-        origin: '*', // Allows connections from any origin. Adjust this as needed.
-        methods: ["GET", "POST"]
-    }
-});
+const io = socketIo(server);
 
 let chatHistory = [];
 let users = [];
 
-// Serve static files from the "public" directory
+// Middleware to parse JSON data
+app.use(express.json());
+
+// Serve static files from the public directory
 app.use(express.static(path.join(__dirname, 'public')));
 
-io.on('connection', socket => {
+// Route to handle login requests
+app.post('/login', (req, res) => {
+    const { username } = req.body;
+
+    // Check if username is provided
+    if (!username || username.trim() === '') {
+        return res.status(400).json({ success: false, message: 'Username is required' });
+    }
+
+    // Respond with success and send username back to client
+    res.json({ success: true, username });
+});
+
+// Socket.io connection handling
+io.on('connection', (socket) => {
     console.log('A user connected:', socket.id);
 
-    // Send chat history when a new user connects
+    // Send chat history to new user
     socket.emit('chatHistory', chatHistory);
 
-    // Set username and notify others
-    socket.on('setUsername', username => {
+    // Listen for username set by client
+    socket.on('setUsername', (username) => {
         users.push({ id: socket.id, username });
         console.log(`${username} joined the chat`);
 
-        // Notify others that the user has joined
+        // Notify others
         socket.broadcast.emit('message', { username: 'System', message: `${username} has joined the chat`, time: getTime() });
     });
 
-    // Handle message sending
-    socket.on('sendMessage', data => {
+    // Handle incoming messages
+    socket.on('sendMessage', (data) => {
         const messageData = { username: data.username, message: data.message, time: getTime() };
         chatHistory.push(messageData);
 
-        // Keep chat history limited to the last 100 messages
+        // Limit chat history to 100 messages
         if (chatHistory.length > 100) {
             chatHistory.shift();
         }
 
-        io.emit('message', messageData); // Broadcast message to all users
+        // Broadcast message to all users
+        io.emit('message', messageData);
     });
 
-    // Handle user disconnecting
+    // Handle user disconnection
     socket.on('disconnect', () => {
-        const user = users.find(u => u.id === socket.id);
+        const user = users.find((u) => u.id === socket.id);
         if (user) {
             console.log(`${user.username} left the chat`);
-            users = users.filter(u => u.id !== socket.id);
+            users = users.filter((u) => u.id !== socket.id);
 
             // Notify others that the user has left
             io.emit('message', { username: 'System', message: `${user.username} has left the chat`, time: getTime() });
@@ -59,10 +73,12 @@ io.on('connection', socket => {
     });
 });
 
+// Helper function to get current time
 function getTime() {
     const date = new Date();
-    return `${date.getHours()}:${date.getMinutes()}`;
+    return `${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
 }
 
+// Start server
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
