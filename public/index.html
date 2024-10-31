@@ -3,37 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Chat Login</title>
+    <title>Chizled Chat</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="container">
-        <h2>Welcome to ChatApp</h2>
-        
-        <!-- Login Form -->
-        <div id="login-section">
-            <input type="text" id="username" placeholder="Username">
-            <input type="password" id="password" placeholder="Password">
-            <button onclick="login()">Login</button>
-        </div>
-
-        <!-- Chat Section -->
-        <div id="chat-section" style="display: none;">
-            <h3>Chat Room</h3>
-            <div id="chat-box"></div>
-            <input type="text" id="message" placeholder="Type a message">
-            <button onclick="sendMessage()">Send</button>
-            <button onclick="logout()">Logout</button>
-        </div>
-
-        <!-- Admin Page Link -->
-        <div id="admin-page" style="display: none;">
-            <h3>Admin Panel</h3>
-            <p>Welcome, Admin! Manage the chat messages here.</p>
-            <button onclick="logout()">Logout</button>
-        </div>
+    <!-- Login Container -->
+    <div id="login-container">
+        <h2>Login</h2>
+        <input type="text" id="username" placeholder="Enter your username" required>
+        <button id="login-button">Login</button>
     </div>
 
+    <!-- Chat Container (Hidden by default) -->
+    <div id="chat-container" style="display: none;">
+        <h2>Chat Room</h2>
+        <div id="messages"></div>
+        <input type="text" id="message-input" placeholder="Type your message here">
+        <button id="send-button">Send</button>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
