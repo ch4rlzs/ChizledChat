@@ -1,82 +1,91 @@
-const express = require('express');
-const http = require('http');
-const socketIo = require('socket.io');
-const fs = require('fs');
+// server.js
+const express = require("express");
+const http = require("http");
+const socketIo = require("socket.io");
+const bcrypt = require("bcryptjs");
+const session = require("express-session");
+const bodyParser = require("body-parser");
+
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 
-let messages = [];
-let users = [];
+// In-memory data store
+const users = [
+  { username: "admin", password: bcrypt.hashSync("adminpass", 10), isAdmin: true }
+];
+const messages = [];
 
-// Middleware to parse JSON bodies
-app.use(express.json());
-app.use(express.static('public'));
+// Middleware
+app.use(express.static("public"));
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(session({
+  secret: "your_secret",
+  resave: false,
+  saveUninitialized: true,
+}));
 
-// Load users from users.json if it exists
-if (fs.existsSync('users.json')) {
-    const data = fs.readFileSync('users.json');
-    users = JSON.parse(data);
-}
+// Routes
+app.get("/", (req, res) => {
+  if (req.session.username) {
+    res.sendFile(__dirname + "/public/chat.html");
+  } else {
+    res.sendFile(__dirname + "/public/index.html");
+  }
+});
 
-// Route to register a user
-app.post('/register', (req, res) => {
-    const { username, password } = req.body;
-    if (users.find(user => user.username === username)) {
-        return res.status(400).json({ message: 'User already exists' });
+app.post("/register", async (req, res) => {
+  const { username, password } = req.body;
+  const existingUser = users.find(user => user.username === username);
+  if (existingUser) {
+    return res.send("Username already exists.");
+  }
+  const hashedPassword = await bcrypt.hash(password, 10);
+  users.push({ username, password: hashedPassword, isAdmin: false });
+  res.redirect("/");
+});
+
+app.post("/login", async (req, res) => {
+  const { username, password } = req.body;
+  const user = users.find(user => user.username === username);
+  if (user && await bcrypt.compare(password, user.password)) {
+    req.session.username = username;
+    req.session.isAdmin = user.isAdmin;
+    res.redirect("/");
+  } else {
+    res.send("Invalid credentials.");
+  }
+});
+
+app.post("/logout", (req, res) => {
+  req.session.destroy();
+  res.redirect("/");
+});
+
+// Socket.IO events
+io.on("connection", (socket) => {
+  const username = socket.handshake.query.username;
+  socket.on("newMessage", (message) => {
+    const newMessage = { username, message, timestamp: new Date() };
+    messages.push(newMessage);
+    io.emit("message", newMessage);
+  });
+
+  socket.on("deleteMessage", (timestamp) => {
+    if (username === "admin") {
+      const index = messages.findIndex(msg => msg.timestamp === timestamp);
+      if (index !== -1) {
+        messages.splice(index, 1);
+        io.emit("deleteMessage", timestamp);
+      }
     }
-    users.push({ username, password });
-    fs.writeFileSync('users.json', JSON.stringify(users));
-    res.status(201).json({ message: 'User registered successfully' });
+  });
+
+  socket.emit("loadMessages", messages);
 });
 
-// Route to login a user
-app.post('/login', (req, res) => {
-    const { username, password } = req.body;
-    const user = users.find(user => user.username === username && user.password === password);
-    if (user) {
-        res.json({ message: 'Login successful', isAdmin: username === 'admin' });
-    } else {
-        res.status(401).json({ message: 'Invalid credentials' });
-    }
-});
-
-// Socket.io connection
-io.on('connection', (socket) => {
-    console.log('User connected:', socket.id);
-
-    // Handle user login and notify admin of connected users
-    socket.on('setUsername', (username) => {
-        socket.username = username;
-        io.emit('userList', users.map(user => user.username));
-    });
-
-    // Broadcast messages
-    socket.on('sendMessage', (data) => {
-        const message = { id: Date.now(), username: socket.username, text: data.message, time: new Date().toLocaleTimeString() };
-        messages.push(message);
-        io.emit('message', message);
-    });
-
-    // Allow admin to delete messages
-    socket.on('deleteMessage', (id) => {
-        if (socket.username === 'admin') {
-            messages = messages.filter(msg => msg.id !== id);
-            io.emit('messageDeleted', id);
-        }
-    });
-
-    // Handle user disconnect
-    socket.on('disconnect', () => {
-        console.log('User disconnected:', socket.id);
-        io.emit('userList', users.map(user => user.username));
-    });
-});
-
-// Serve the admin panel for admin user
-app.get('/admin', (req, res) => {
-    res.sendFile(__dirname + '/public/admin.html');
-});
-
+// Start server
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
