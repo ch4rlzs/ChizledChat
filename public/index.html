@@ -1,33 +1,58 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat App</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="loginRegisterContainer">
-        <h2>Login</h2>
-        <input type="text" id="loginUsername" placeholder="Username">
-        <input type="password" id="loginPassword" placeholder="Password">
-        <button id="loginButton">Login</button>
-        <p id="loginMessage"></p>
-        
-        <h2>Register</h2>
-        <input type="text" id="registerUsername" placeholder="Username">
-        <input type="password" id="registerPassword" placeholder="Password">
-        <button id="registerButton">Register</button>
-        <p id="registerMessage"></p>
-    </div>
-    
-    <div id="chatContainer" style="display:none;">
-        <div id="messages"></div>
-        <input type="text" id="messageInput" placeholder="Type a message...">
-        <button id="sendMessageButton">Send</button>
-    </div>
+  <div class="chat-container">
+    <div id="messages"></div>
+    <form id="messageForm">
+      <input type="text" id="messageInput" placeholder="Type your message..." required>
+      <button type="submit">Send</button>
+    </form>
+    <form action="/logout" method="POST">
+      <button type="submit">Logout</button>
+    </form>
+  </div>
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="chat.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io({ query: { username: "<%= session.username %>" } });
+
+    socket.on("loadMessages", messages => {
+      messages.forEach(addMessage);
+    });
+
+    socket.on("message", addMessage);
+
+    socket.on("deleteMessage", timestamp => {
+      const msgElement = document.querySelector(`[data-timestamp="${timestamp}"]`);
+      if (msgElement) msgElement.remove();
+    });
+
+    function addMessage({ username, message, timestamp }) {
+      const msgDiv = document.createElement("div");
+      msgDiv.className = "message";
+      msgDiv.dataset.timestamp = timestamp;
+      msgDiv.innerHTML = `<b>${username}</b>: ${message} <small>${new Date(timestamp).toLocaleTimeString()}</small>`;
+      document.getElementById("messages").appendChild(msgDiv);
+
+      if ("<%= session.isAdmin %>" === "true") {
+        const deleteButton = document.createElement("button");
+        deleteButton.innerText = "Delete";
+        deleteButton.onclick = () => socket.emit("deleteMessage", timestamp);
+        msgDiv.appendChild(deleteButton);
+      }
+    }
+
+    document.getElementById("messageForm").onsubmit = (e) => {
+      e.preventDefault();
+      socket.emit("newMessage", document.getElementById("messageInput").value);
+      document.getElementById("messageInput").value = "";
+    };
+  </script>
 </body>
 </html>
