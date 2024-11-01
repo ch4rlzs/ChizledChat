@@ -3,56 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chat</title>
+  <title>Login or Register</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="chat-container">
-    <div id="messages"></div>
-    <form id="messageForm">
-      <input type="text" id="messageInput" placeholder="Type your message..." required>
-      <button type="submit">Send</button>
+  <div class="container">
+    <h1>Chat App</h1>
+    <form action="/login" method="POST">
+      <input type="text" name="username" placeholder="Username" required>
+      <input type="password" name="password" placeholder="Password" required>
+      <button type="submit">Login</button>
     </form>
-    <form action="/logout" method="POST">
-      <button type="submit">Logout</button>
+    <form action="/register" method="POST">
+      <input type="text" name="username" placeholder="Username" required>
+      <input type="password" name="password" placeholder="Password" required>
+      <button type="submit">Register</button>
     </form>
   </div>
-
-  <script src="/socket.io/socket.io.js"></script>
-  <script>
-    const socket = io({ query: { username: "<%= session.username %>" } });
-
-    socket.on("loadMessages", messages => {
-      messages.forEach(addMessage);
-    });
-
-    socket.on("message", addMessage);
-
-    socket.on("deleteMessage", timestamp => {
-      const msgElement = document.querySelector(`[data-timestamp="${timestamp}"]`);
-      if (msgElement) msgElement.remove();
-    });
-
-    function addMessage({ username, message, timestamp }) {
-      const msgDiv = document.createElement("div");
-      msgDiv.className = "message";
-      msgDiv.dataset.timestamp = timestamp;
-      msgDiv.innerHTML = `<b>${username}</b>: ${message} <small>${new Date(timestamp).toLocaleTimeString()}</small>`;
-      document.getElementById("messages").appendChild(msgDiv);
-
-      if ("<%= session.isAdmin %>" === "true") {
-        const deleteButton = document.createElement("button");
-        deleteButton.innerText = "Delete";
-        deleteButton.onclick = () => socket.emit("deleteMessage", timestamp);
-        msgDiv.appendChild(deleteButton);
-      }
-    }
-
-    document.getElementById("messageForm").onsubmit = (e) => {
-      e.preventDefault();
-      socket.emit("newMessage", document.getElementById("messageInput").value);
-      document.getElementById("messageInput").value = "";
-    };
-  </script>
 </body>
 </html>
