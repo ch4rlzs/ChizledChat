@@ -1,88 +1,27 @@
-// Connect to server via Socket.io
 const socket = io();
 
-document.addEventListener('DOMContentLoaded', () => {
-    // Register button functionality
-    const registerButton = document.getElementById('registerButton');
-    if (registerButton) {
-        registerButton.addEventListener('click', function() {
-            const username = document.getElementById('registerUsername').value;
-            const password = document.getElementById('registerPassword').value;
-
-            fetch('/register', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ username, password })
-            })
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('registerMessage').innerText = data.message;
-            })
-            .catch(err => {
-                document.getElementById('registerMessage').innerText = 'Error registering user.';
-            });
-        });
-    }
-
-    // Login button functionality
-    const loginButton = document.getElementById('loginButton');
-    if (loginButton) {
-        loginButton.addEventListener('click', function() {
-            const username = document.getElementById('loginUsername').value;
-            const password = document.getElementById('loginPassword').value;
-
-            fetch('/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ username, password })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (response.ok) {
-                    document.getElementById('loginMessage').innerText = data.message;
-                    // Redirect to chat or load chat interface here
-                } else {
-                    document.getElementById('loginMessage').innerText = data.message;
-                }
-            })
-            .catch(err => {
-                document.getElementById('loginMessage').innerText = 'Error logging in.';
-            });
-        });
-    }
-
-    // Send message button functionality
-    const sendButton = document.getElementById('sendButton');
-    if (sendButton) {
-        sendButton.addEventListener('click', () => {
-            const messageInput = document.getElementById('message-input');
-            const message = messageInput.value.trim();
-
-            if (message) {
-                socket.emit('sendMessage', { username, message });
-                messageInput.value = ''; // Clear input
-            }
-        });
-    }
-
-    // Handle incoming messages
-    socket.on('message', (data) => {
-        const messageElement = document.createElement('div');
-        messageElement.textContent = `[${data.time}] ${data.username}: ${data.message}`;
-        document.getElementById('messages').appendChild(messageElement);
+document.getElementById('loginButton').addEventListener('click', async () => {
+    const username = document.getElementById('loginUsername').value;
+    const password = document.getElementById('loginPassword').value;
+    
+    const response = await fetch('/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
     });
 
-    // Display chat history on load
-    socket.on('chatHistory', (history) => {
-        const messagesContainer = document.getElementById('messages');
-        history.forEach((msg) => {
-            const messageElement = document.createElement('div');
-            messageElement.textContent = `[${msg.time}] ${msg.username}: ${msg.message}`;
-            messagesContainer.appendChild(messageElement);
-        });
-    });
+    const data = await response.json();
+    if (response.ok) {
+        socket.emit('setUsername', username);
+        document.getElementById('loginRegisterContainer').style.display = 'none';
+        document.getElementById('chatContainer').style.display = 'block';
+    } else {
+        document.getElementById('loginMessage').innerText = data.message;
+    }
+});
+
+socket.on('message', (msg) => {
+    const messageEl = document.createElement('div');
+    messageEl.innerHTML = `<strong>${msg.username}</strong>: ${msg.text} <span>${msg.time}</span>`;
+    document.getElementById('messages').appendChild(messageEl);
 });
