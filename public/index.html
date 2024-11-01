@@ -4,30 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat App</title>
-    <link rel="stylesheet" href="style.css">
-    
-
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="container">
-        <h1>Chrlzs chat</h1>
-        <div id="loginForm">
-            <h2>Login</h2>
-            <input type="text" id="loginUsername" placeholder="Username" required>
-            <input type="password" id="loginPassword" placeholder="Password" required>
-            <button id="loginButton">Login</button>
-            <p id="loginMessage"></p>
-        </div>
-        <div id="registerForm">
-            <h2>Register</h2>
-            <input type="text" id="registerUsername" placeholder="Username" required>
-            <input type="password" id="registerPassword" placeholder="Password" required>
-            <button id="registerButton">Register</button>
-            <p id="registerMessage"></p>
-        </div>
+    <div id="loginRegisterContainer">
+        <h2>Login</h2>
+        <input type="text" id="loginUsername" placeholder="Username">
+        <input type="password" id="loginPassword" placeholder="Password">
+        <button id="loginButton">Login</button>
+        <p id="loginMessage"></p>
+        
+        <h2>Register</h2>
+        <input type="text" id="registerUsername" placeholder="Username">
+        <input type="password" id="registerPassword" placeholder="Password">
+        <button id="registerButton">Register</button>
+        <p id="registerMessage"></p>
+    </div>
+    
+    <div id="chatContainer" style="display:none;">
+        <div id="messages"></div>
+        <input type="text" id="messageInput" placeholder="Type a message...">
+        <button id="sendMessageButton">Send</button>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
-    <script src="chat.js" defer></script>
+    <script src="chat.js"></script>
 </body>
 </html>
